@@ -1,3 +1,4 @@
 [submodule "jipda-pdg"]
 	path = jipda-pdg
 	url = git@github.com:Bjarno/jipda.git
+	branch = master
