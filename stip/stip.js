@@ -1305,12 +1305,12 @@ var Stip = (function () {
 
 
 if (typeof module !== 'undefined' && module.exports != null) {
-    var pdg_edge        = require('./pdg/edge.js');
+    var pdg_edge        = require('./PDG/edge.js');
     var EDGES           = pdg_edge.EDGES;
     var PDG_Edge        = pdg_edge.PDG_Edge;
     var Parameter_Edge  = Parameter_Edge;
 
-    var node            = require('./pdg/node.js');
+    var node            = require('./PDG/node.js');
     var PDG_Node        = node.PDG_Node;
     var EntryNode       = node.EntryNode;
     var ObjectEntryNode = node.ObjectEntryNode;
@@ -1324,7 +1324,7 @@ if (typeof module !== 'undefined' && module.exports != null) {
     var DistributedNode = node.DistributedNode;
 
 
-    var graph           = require('./pdg/graph.js');
+    var graph           = require('./PDG/graph.js');
     var PDG             = graph.PDG;
 
     var common          = require('../jipda-pdg/common.js');
