@@ -2,6 +2,8 @@
  *          CLIENT           *
  * * * * * * * * * * * * * * */
 
+/// <<< Do stuff to send message to UI on assignment somewhere in this file
+
 var NodeParse = (function () {
 
     var toreturn = {};
