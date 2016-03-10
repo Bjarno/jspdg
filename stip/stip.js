@@ -473,7 +473,7 @@ var Stip = (function () {
                                             .filter(function (n) {return n.isObjectEntry})[0]
                            // } 
                             if (!objectentry) {
-                                addDataDep(declarationNode, stmNode);
+                              //  addDataDep(declarationNode, stmNode);
                             }
                             else {
                                 if (objectentry.getMember) {
@@ -730,6 +730,15 @@ var Stip = (function () {
             entry     = calledf.length > 0 ? graphs.PDG.getEntryNode(calledf[0]) : false, 
             handle    =  function (entrynode) {
                 var formals = entrynode.getFormalIn();
+                if (Comments.isGeneratedAnnotated(node.leadingComment)) {
+                    addCall(callnode, entrynode, true);
+                    if (node.clientCalls) 
+                        entrynode.clientCalls = node.clientCalls;
+                    if (node.serverCalls)
+                        entrynode.serverCalls = node.serverCalls;
+                    return;
+                }
+
                 if (!callnode.name.startsWith('anonf')) {
                     addToPDG(callnode, upnode, graphs);
                     /* Recall comment handlers on upnode in case the entry node is handled later than the call node */
@@ -805,7 +814,16 @@ var Stip = (function () {
                 return [callnode]
             };
 
-        if (entry && !(Aux.isVarDeclarator(entry.parsenode)) && !entry.parsenode.init)
+        /* generated calls should add call info to entry node */
+        if (Comments.isGeneratedAnnotated(node.leadingComment) && entry) {
+                if (node.clientCalls) 
+                        entry.clientCalls = node.clientCalls;
+                if (node.serverCalls)
+                        entry.serverCalls = node.serverCalls;
+                return;
+        }
+
+        else if (entry && !(Aux.isVarDeclarator(entry.parsenode)) && !entry.parsenode.init)
             return handle(entry);
         else if (primitive) {
             callnode.primitive = true;
@@ -1064,11 +1082,12 @@ var Stip = (function () {
         if (dtypef && dtypet)
             if(dtypef.value === DNODES.SHARED.value ||
                 dtypet.value === DNODES.SHARED.value) 
-                from.addEdgeOut(to, EDGES.CALL)
+                from.addEdgeOut(to, EDGES.CALL);
             else if (dtypef.value !== dtypet.value) 
-                from.addEdgeOut(to, EDGES.REMOTEC)
+                from.addEdgeOut(to, EDGES.REMOTEC);
             else 
-                from.addEdgeOut(to, EDGES.CALL)
+                from.addEdgeOut(to, EDGES.CALL);
+
             if (dtypef.value === DNODES.SERVER &&
                 dtypet.value === DNODES.CLIENT)
                 to.clientCalls += 1;
@@ -1157,10 +1176,10 @@ var Stip = (function () {
             jtc = graphs.JTC,
             parsetype = node.type,
             pdgnode;
-            console.log("PDG(" + parsetype + ")" + node);
 
         if (node.leadingComment) {
-            if (Comments.isGeneratedAnnotated(node.leadingComment))
+            if (Comments.isGeneratedAnnotated(node.leadingComment) && 
+                !(Aux.isCallExp(node) || Aux.isExpStm(node) && Aux.isCallExp(node.expression)))
                 return;
             Comments.handleBeforeComment(node.leadingComment, node)
         }
@@ -1237,7 +1256,7 @@ var Stip = (function () {
                 break;
         }
 
-        if (node.leadingComment) {
+        if (pdgnode && node.leadingComment) {
             Comments.handleAfterComment(node.leadingComment, pdgnode)
         }
 
@@ -1294,6 +1313,11 @@ var Stip = (function () {
 
     /* Create the program dependency graph */
     start = function (graphs) {
+        /* Regenerate AST such that tags have the correct ordering,
+           because pre-analysis could have added new node with wrong tag number */
+       // graphs.AST = Ast.createAst(escodegen.generate(graphs.AST), {loc: true, owningComments: true, comment: true});
+       // Ast.augmentAst(graphs.AST);
+
         makePDGNode(graphs, graphs.AST);
     }
 

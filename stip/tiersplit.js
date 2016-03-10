@@ -30,7 +30,7 @@ function tiersplit (src) {
     /// <<< array met variablenamen (callbacks)
     /// <<< Reactive (mapping van identifiers naar declaratienodes via Jipda)
         // (bij transpilatie: assignments fixen)
-
+    
     var pre_analysis = pre_analyse(ast),
         genast       = pre_analysis.ast,
         assumes      = pre_analysis.assumes,

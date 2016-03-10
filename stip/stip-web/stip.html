@@ -87,6 +87,7 @@
     <script type="text/javascript" src="../transpiler/Nodeify.js"></script>
     <script type="text/javascript" src="../transpiler/CT_parse.js"></script>
     <script type="text/javascript" src="../transpiler/slice.js"></script>
+    <script type="text/javascript" src="../transpiler/transpiler.js"></script>
     <script type="text/javascript" src="../lib/esutils.js"></script>
     <script type="text/javascript" src="../lib/esutils_code.js"></script>
     <script type="text/javascript" src="../lib/escodegen.js"></script>
@@ -109,12 +110,12 @@
                 // First parse and create again via escodegen
                 ast = Ast.createAst(src, {loc:true, owningComments: true, comment: true});
             ast = Hoist.hoist(ast, function (node) {
-                    return Aux.isBlockStm(node) && Comments.isTierAnnotated(node)
+                    return Aux.isBlockStm(node) && Comments.isTierAnnotated(node);
                 });
 
 
             /* Pre analysis step (uses falafel, so does not work on AST but string representation */
-            var preanalysis = pre_analyse(ast);
+            var preanalysis = pre_analyse(ast, []);
             src = escodegen.generate(preanalysis.ast);
             console.log(src);
             assumes = preanalysis.assumes;
@@ -123,7 +124,10 @@
             $("#graph").empty();
             graphs = new Stip.Graphs(preanalysis.ast, src, preanalysis.primitives);
             Stip.start(graphs);
-            var g = createPDGGraph(graphs.PDG);
+
+            var g = createPDGGraph(graphs.PDG, assumes);
+
+
 
             drawPDGGraph(g[0], g[1], g[2]);
             return graphs; 
@@ -196,7 +200,7 @@
                     })
                     var target   = $('#target').val(),
                         asyncomm = $('#asyncomm').val(),
-                        program  = Transpiler.transpile(nodes, {target: target, tier: option, asynccomm : asyncomm}, graphs.AST);
+                        program  = CodeGenerator.transpile(nodes, {target: target, tier: option, asynccomm : asyncomm}, graphs.AST);
                     return program;
                 },
                 remove    = function (node) {
@@ -223,7 +227,7 @@
                             remove(e.to)
                         });
                     }
-                }
+                };
             sortedc.sort(function (n1, n2) { 
                 return n1.cnt - n2.cnt;
             }); 
@@ -336,7 +340,7 @@
             removes.map(function (node) {
                remove(node);
             });
-            program = Transpiler.transpile(nodes, {target: 'normal', cps : true}, graphs.AST);
+            program = CodeGenerator.transpile(nodes, {target: 'normal', cps : true}, graphs.AST);
             slicededitor.setValue(escodegen.generate(program.program));
         } catch (err) {
             console.log(err.stack);

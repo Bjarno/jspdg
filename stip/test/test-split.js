@@ -1,4 +1,8 @@
+/* mocha --ui tdd tests/test.js  */
+
 var compareAst = require('compare-ast');
+
+
 
 /* Libraries */
 var esprima         = require('../lib/esprima.js');
@@ -16,7 +20,7 @@ var Hoist           = require('../hoist.js').Hoist;
 var Stip            = require('../stip.js').Stip;
 
 /* Transpiler */
-var Transpiler       = require('../transpiler/slice.js').Transpiler;
+var CodeGenerator       = require('../transpiler/slice.js').CodeGenerator;
 
 
 
@@ -26,7 +30,7 @@ function tiersplit (src) {
     ast = Hoist.hoist(ast, function (node) {
         return Aux.isBlockStm(node) && Comments.isTierAnnotated(node)
     });
-    var pre_analysis = pre_analyse(ast),
+    var pre_analysis = pre_analyse(ast, []),
         genast       = pre_analysis.ast,
         assumes      = pre_analysis.assumes,
         shared       = pre_analysis.shared,
@@ -53,7 +57,7 @@ function tiersplit (src) {
                 })
                 var target   = 'node.js',
                     asyncomm = 'callbacks',
-                    program  = Transpiler.transpile(nodes, {target: target, tier: option, asynccomm : asyncomm}, graphs.AST);
+                    program  = CodeGenerator.transpile(nodes, {target: target, tier: option, asynccomm : asyncomm}, graphs.AST);
                 return program;
             },
             remove    = function (node) {
@@ -199,7 +203,7 @@ function cpstransform (src) {
             removes.map(function (node) {
                remove(node);
             });
-            program = Transpiler.transpile(nodes, {target: 'normal', cps : true}, graphs.AST);
+            program = CodeGenerator.transpile(nodes, {target: 'normal', cps : true}, graphs.AST);
             return program;
 }
 
