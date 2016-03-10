@@ -4,16 +4,20 @@ var path = require("path");
 
 var js_libs = (function () {
 
-    var https   = "var https = {get : function(options) {return {on: function (type, fn) {}}}};";
-    var jQuery  = fs.readFileSync(path.join(__dirname, "jslibs/jquery.placeholder.js"), "utf-8");
-    var math    = "var Math = {random : function () {return 0}};";
-    var console = "var console = {log: function (txt) {} };";
-    var windowo = "var window = {innerWidth : 0, innerHeight : 0, screenX : 0, screenY : 0, outerWidth: 0, outerHeight : 0 };"
-    var json    = "var JSON = {parse : function (str) {return []}};"
+    var readLibrary = function (lib) {
+        return fs.readFileSync(path.join(__dirname, "jslibs/" + lib + ".placeholder.js"), "utf-8");
+    }
+
+    var https   = readLibrary("https");
+    var jQuery  = readLibrary("jquery");
+    var math    = readLibrary("math");
+    var consolo = readLibrary("console");
+    var windowo = readLibrary("window");
+    var json    = readLibrary("json");
 
 
 
-    var libs = [https, console, jQuery, math, windowo, json];
+    var libs = [https, consolo, jQuery, math, windowo, json];
 
 
      return  { 
