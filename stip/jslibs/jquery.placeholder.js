@@ -6,6 +6,9 @@ function $(ids) {
         this.html = function() {
         	return new n();
         };
+        this.append = function() {
+            return new n();
+        };
         this.addClass = function () {
             return new n();
         };

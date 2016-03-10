@@ -15,12 +15,9 @@ var js_libs = (function () {
     var windowo = readLibrary("window");
     var json    = readLibrary("json");
 
-
-
     var libs = [https, consolo, jQuery, math, windowo, json];
 
-
-     return  { 
+    return  { 
         getLibraries : function () {
             return libs.map(function (lib) {
                 var ast = esprima.parse(lib).body[0];
