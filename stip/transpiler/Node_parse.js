@@ -68,7 +68,7 @@ var NodeParse = (function () {
     };
 
     /* Representation of a remote procedurecall from client -> server:
-     *   client.rpcCall(fname, args, callback(err, res) {})
+     *   client.rpc(fname, args, callback(err, res) {})
      */
 
     var RPC = function (call, fname, args) {
@@ -86,7 +86,7 @@ var NodeParse = (function () {
                                             },
                                     property  : {
                                         type  : "Identifier",
-                                        name  : "rpcCall"
+                                        name  : "rpc"
                                     }
                                 },
                                 arguments : [
@@ -227,7 +227,7 @@ var NodeParse = (function () {
                                 },
                         property  : {
                             type  : "Identifier",
-                            name  : "rpcCall"
+                            name  : "rpc"
                         }
                     },
                     arguments : [
@@ -319,7 +319,7 @@ var NodeParse = (function () {
     };
 
     var createClient = function () {
-        return esprima.parse("var client = new ClientRpc('http://127.0.0.1:8080');").body;
+        return esprima.parse("var client = new ClientRpc('http://127.0.0.1:3000');").body;
     };
 
     var methodsServer = function () {
