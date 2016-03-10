@@ -1,0 +1,1 @@
+This directory contains placeholder methods of some JavaScript libraries. View ../jslibs.js on how it is used.
