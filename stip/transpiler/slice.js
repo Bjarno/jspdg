@@ -36,10 +36,17 @@ var CodeGenerator = (function () {
         var addSetUp = function (option, transpiled) {
             switch (option.target) {
                 case 'node.js':
-                    if(option.tier === 'client')
-                        transpiled.setup.push(NodeParse.createClient());
-                    else
-                        transpiled.setup.push(NodeParse.createServer());
+                    if(option.tier === 'client') {
+                        var client = NodeParse.createClient();
+                        client.forEach(function (a) {
+                            transpiled.setup.push(a);
+                        });
+                    } else {
+                        var server = NodeParse.createServer();
+                        server.forEach(function (a) {
+                            transpiled.setup.push(a);
+                        });
+                    }
             }
             return transpiled;
         }

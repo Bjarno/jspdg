@@ -315,11 +315,11 @@ var NodeParse = (function () {
 
 
     var createServer = function () {
-        return esprima.parse('var server = new ServerRpc(serverHttp, {})').body[0];
+        return esprima.parse('var ServerRpc = require("rpc");\nvar server = new ServerRpc()').body;
     };
 
     var createClient = function () {
-        return esprima.parse("var client = new ClientRpc('http://127.0.0.1:8080');").body[0];
+        return esprima.parse("var client = new ClientRpc('http://127.0.0.1:8080');").body;
     };
 
     var methodsServer = function () {
