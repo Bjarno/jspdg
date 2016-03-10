@@ -68,7 +68,7 @@ var NodeParse = (function () {
     };
 
     /* Representation of a remote procedurecall from client -> server:
-     *   client.rpc(fname, args, callback(err, res) {})
+     *   client.rpcCall(fname, args, callback(err, res) {})
      */
 
     var RPC = function (call, fname, args) {
@@ -227,7 +227,7 @@ var NodeParse = (function () {
                                 },
                         property  : {
                             type  : "Identifier",
-                            name  : "rpc"
+                            name  : "rpcCall"
                         }
                     },
                     arguments : [
@@ -251,7 +251,7 @@ var NodeParse = (function () {
 
     var broadcast = function () {
         return {
-                parsenode :  {
+            parsenode :  {
                 type: "ExpressionStatement",
                 expression: {
                     type: "CallExpression",
@@ -271,17 +271,16 @@ var NodeParse = (function () {
                         {
                             type: "Identifier",
                             name: ""
-                        },
-                        {
-                            type: "ArrayExpression",
-                            elements: []
                         }
                     ]
                 }
             }, 
  
             addArgs : function (args) {
-                this.parsenode.expression.arguments[1].elements = args;
+                var parsenodeargs = this.parsenode.expression.arguments;
+                args.forEach(function (a) {
+                    parsenodeargs.push(a);
+                });
             },
 
             setName : function (name) {
