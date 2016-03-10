@@ -18,8 +18,7 @@ var Hoist           = require('./hoist.js').Hoist;
 var Stip            = require('./stip.js').Stip;
 
 /* Transpiler */
-var Transpiler       = require('./transpiler/slice.js').Transpiler;
-
+var Transpiler       = require('./transpiler/slice.js').CodeGenerator;
 
 function tiersplit (src) {
     var ast = Ast.createAst(src, {loc: true, owningComments: true, comment: true});
@@ -28,10 +27,11 @@ function tiersplit (src) {
     });
 
     /// <<< array met variablenamen (callbacks)
+    var callbacks = [];
     /// <<< Reactive (mapping van identifiers naar declaratienodes via Jipda)
         // (bij transpilatie: assignments fixen)
     
-    var pre_analysis = pre_analyse(ast),
+    var pre_analysis = pre_analyse(ast, callbacks),
         genast       = pre_analysis.ast,
         assumes      = pre_analysis.assumes,
         shared       = pre_analysis.shared,
