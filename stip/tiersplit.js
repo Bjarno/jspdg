@@ -20,18 +20,16 @@ var Stip            = require('./stip.js').Stip;
 /* Transpiler */
 var Transpiler       = require('./transpiler/slice.js').CodeGenerator;
 
-function tiersplit (src) {
+function tiersplit (src, callbackNames) {
     var ast = Ast.createAst(src, {loc: true, owningComments: true, comment: true});
     ast = Hoist.hoist(ast, function (node) {
         return Aux.isBlockStm(node) && Comments.isTierAnnotated(node)
     });
 
-    /// <<< array met variablenamen (callbacks)
-    var callbacks = [];
     /// <<< Reactive (mapping van identifiers naar declaratienodes via Jipda)
         // (bij transpilatie: assignments fixen)
     
-    var pre_analysis = pre_analyse(ast, callbacks),
+    var pre_analysis = pre_analyse(ast, callbackNames),
         genast       = pre_analysis.ast,
         assumes      = pre_analysis.assumes,
         shared       = pre_analysis.shared,
