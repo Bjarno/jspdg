@@ -17,6 +17,9 @@ var pre_analyse     = require('./pre-analysis.js').pre_analyse;
 var Hoist           = require('./hoist.js').Hoist;
 var Stip            = require('./stip.js').Stip;
 
+/* Pdg */
+var Pdg             = require('./../jipda-pdg/pdg/pdg.js').Pdg;
+
 /* Transpiler */
 var Transpiler       = require('./transpiler/slice.js').CodeGenerator;
 
@@ -37,6 +40,29 @@ var callbackNames = context.callbacks;
         shared       = pre_analysis.shared,
         asyncs       = pre_analysis.asyncs,
         graphs       = new Stip.Graphs(ast, src, pre_analysis.primitives);
+
+    // Q: Where does Pdg come from?
+
+    // Identifiers to declaratienodes
+    context.crumbs.forEach(function (dynamic) {
+        var on_update = dynamic.on_update;
+        var type = on_update.type;
+
+        switch (type) {
+            case "Identifier":
+                var varname = on_update.varname;
+                var declNode = Pdg.declarationOf({ // Q: Faalt, want is op zoek naar parent van dit object, en dat bestaat niet.
+                    type: "Identifier",
+                    "name": varname
+                }, ast); // Q: Moet hier ast of genast gebruikt worden?
+                console.log(varname);
+                require("./../../utils.js").dump(declNode);
+                on_update.graph = {
+                    declarationNode: declNode
+                };
+                break;
+        }
+    });
 
     Stip.start(graphs);
 
