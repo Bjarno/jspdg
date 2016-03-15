@@ -54,7 +54,7 @@ var callbackNames = context.callbacks;
                 var declNode = Pdg.declarationOf({ // Q: Faalt, want is op zoek naar parent van dit object, en dat bestaat niet.
                     type: "Identifier",
                     "name": varname
-                }, ast); // Q: Moet hier ast of genast gebruikt worden?
+                }, genast);
                 console.log(varname);
                 require("./../../utils.js").dump(declNode);
                 on_update.graph = {
