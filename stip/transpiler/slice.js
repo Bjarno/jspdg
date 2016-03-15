@@ -9,6 +9,8 @@ var CodeGenerator = (function () {
                     //return Meteorify.transpile(slicednodes, node, ast)
                 case 'node.js':
                     return Transpiler.transpile(Transpiler.createTranspileObject(node, nodes, ast, option, Nodeify, [], []));
+                case 'redstone':
+                    return Transpiler.transpile(Transpiler.createTranspileObject(node, nodes, ast, option, Reactify, [], []));
             }
         }
 
@@ -36,6 +38,7 @@ var CodeGenerator = (function () {
         var addSetUp = function (option, transpiled) {
             switch (option.target) {
                 case 'node.js':
+                case 'redstone':
                     if(option.tier === 'client') {
                         var client = NodeParse.createClient();
                         client.forEach(function (a) {
@@ -57,6 +60,7 @@ var CodeGenerator = (function () {
         var transformBody = function (option, transpiled, body, methods) {
             switch (option.target) {
                 case 'node.js':
+                case 'redstone':
                     if (option.tier === 'client') {
                         var methodsDecl = NodeParse.methodsClient();
                         methodsDecl.expression.arguments[0].properties = methods;
@@ -173,6 +177,7 @@ var CodeGenerator = (function () {
         if (typeof module !== 'undefined' && module.exports != null) {
             Nodeify = require('./Nodeify.js').Nodeify;
             JSify   = require('./JSify.js').JSify;
+            Reactify = require('./Reactify.js').Reactify;
             Transpiler = require('./transpiler.js').Transpiler;
             exports.CodeGenerator = toreturn;
         }

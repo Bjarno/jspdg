@@ -82,7 +82,7 @@ var callbackNames = context.callbacks;
                 nodes.sort(function (n1, n2) {
                     return n1.cnt - n2.cnt;
                 })
-                var target   = 'node.js',
+                var target   = 'redstone',
                     asyncomm = 'callbacks',
                     program  = Transpiler.transpile(nodes, {target: target, tier: option, asynccomm : asyncomm}, graphs.AST);
                 return program;

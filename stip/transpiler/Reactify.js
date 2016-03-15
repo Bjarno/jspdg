@@ -12,7 +12,7 @@ var Reactify = (function () {
     }
 
     transformer.transformVariableDecl = Nodeify.transformVariableDecl;
-    transformer.transformAssignmentExp = Nodeify.transformAssignmentExp; // <<< TODO: Change me!
+    transformer.transformAssignmentExp = Nodeify.transformAssignmentExp;
     transformer.transformBinaryExp = Nodeify.transformBinaryExp;
     transformer.transformFunctionExp = Nodeify.transformFunctionExp;
     transformer.transformFunctionDecl = Nodeify.transformFunctionDecl;
@@ -29,6 +29,14 @@ var Reactify = (function () {
     transformer.transformActualParameter = Nodeify.transformActualParameter;
     transformer.transformFormalParameter = Nodeify.transformFormalParameter;
     transformer.transformExitNode = Nodeify.transformExitNode;
+
+    var onAssignment = function onAssignment(transpiler) {
+        // TODO: Do reactivity stuff here!
+        console.log("Reactify.transformAssignmentExp()!");
+        return Nodeify.transformAssignmentExp(transpiler);
+    };
+
+    transformer.transformAssignmentExp = onAssignment;
 
     if (typeof module !== 'undefined' && module.exports != null) {
         exports.Reactify  = transformer;
