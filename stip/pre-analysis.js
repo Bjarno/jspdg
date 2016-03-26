@@ -3,7 +3,7 @@
    that are used as callback functions on the client side.
    Calls for these functions are automatically added in the client side block.
 */
-var pre_analyse = function (ast, callbackFunctionsC) {
+var pre_analyse = function (ast, callbackFunctionsC, reactiveVarsC) {
     var anonf_ct    = 0;
     var anonf_name  = 'anonf';
     var primitives  = ["$", "console", "window"]; 
@@ -21,6 +21,7 @@ var pre_analyse = function (ast, callbackFunctionsC) {
     var primtoadd   = {};
     var fundefsC    = [];
     var sharedblock;
+    var reactiveVarExprs = [];
 
     function function_args (callnode) {
         return callnode.arguments.filter(function (arg) {
@@ -31,6 +32,18 @@ var pre_analyse = function (ast, callbackFunctionsC) {
     
     function createIdentifier (id) {
         return {type:'Identifier', name:id};
+    }
+
+    function createIdentifierExpression(id) {
+        var expression = {
+            "type": "ExpressionStatement",
+            "expression": {
+                "type": "Identifier",
+                "name": id
+            }
+        };
+        Ast.augmentAst(expression);
+        return expression;
     }
 
     function createDeclaration  (id) {
@@ -247,6 +260,25 @@ var pre_analyse = function (ast, callbackFunctionsC) {
         return calls;
     }
 
+    function generateReativeVarExpressions() {
+        var expressions = [];
+        var nodes = {};
+
+        reactiveVarsC.forEach(function (varname) {
+            var expression = createIdentifierExpression(varname);
+            expression.leadingComment = {type: "Block", value:"@generated", range: [0,16]};
+            expression.clientCalls = 1;
+
+            // Add to result expressions to be added to AST tree
+            expressions.push(expression);
+            
+            // Add node to object to reference to later.
+            reactiveVarExprs[varname] = expression;
+        });
+
+        return expressions;
+    }
+
     Aux.walkAst(ast, {
 
         pre: function (node) {
@@ -287,6 +319,10 @@ var pre_analyse = function (ast, callbackFunctionsC) {
                    
                 if (comment && Comments.isClientAnnotated(comment)) {
                     node.body = node.body.concat(generateCallbackCalls());
+                }
+
+                if (comment && Comments.isClientAnnotated(comment)) {
+                    node.body = node.body.concat(generateReativeVarExpressions());
                 }
             }
 
@@ -397,7 +433,8 @@ var pre_analyse = function (ast, callbackFunctionsC) {
         assumes    : js_libs.getLibraries().concat(assumes),
         shared     : sharedblock,
         primitives : primitives,
-        asyncs     : asyncs
+        asyncs     : asyncs,
+        reactiveVarExprs: reactiveVarExprs
     };
 }
 

@@ -33,15 +33,27 @@ function tiersplit (src, context) {
         // (bij transpilatie: assignments fixen)
     
 var callbackNames = context.callbacks;
+var reactiveVars = [];
 
-    var pre_analysis = pre_analyse(ast, callbackNames),
+context.crumbs.forEach(function (dynamic) {
+    var on_update = dynamic.on_update;
+    var type = on_update.type;
+
+    switch (type) {
+        case "Identifier":
+            var varname = on_update.varname;
+            reactiveVars.push(varname);
+            break;
+    }
+});
+
+    var pre_analysis = pre_analyse(ast, callbackNames, reactiveVars),
         genast       = pre_analysis.ast,
         assumes      = pre_analysis.assumes,
         shared       = pre_analysis.shared,
         asyncs       = pre_analysis.asyncs,
-        graphs       = new Stip.Graphs(ast, src, pre_analysis.primitives);
-
-    // Q: Where does Pdg come from?
+        graphs       = new Stip.Graphs(ast, src, pre_analysis.primitives),
+        reactiveVarExprs = pre_analysis.reactiveVarExprs;
 
     // Identifiers to declaratienodes
     context.crumbs.forEach(function (dynamic) {
