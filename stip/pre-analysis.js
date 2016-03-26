@@ -21,7 +21,7 @@ var pre_analyse = function (ast, callbackFunctionsC, reactiveVarsC) {
     var primtoadd   = {};
     var fundefsC    = [];
     var sharedblock;
-    var reactiveVarExprs = [];
+    var reactiveVarExprs = {};
 
     function function_args (callnode) {
         return callnode.arguments.filter(function (arg) {

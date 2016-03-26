@@ -55,7 +55,7 @@ context.crumbs.forEach(function (dynamic) {
         graphs       = new Stip.Graphs(ast, src, pre_analysis.primitives),
         reactiveVarExprs = pre_analysis.reactiveVarExprs;
 
-    // Identifiers to declaratienodes
+    // Find declaration nodes for the reactive variables
     context.crumbs.forEach(function (dynamic) {
         var on_update = dynamic.on_update;
         var type = on_update.type;
@@ -63,12 +63,7 @@ context.crumbs.forEach(function (dynamic) {
         switch (type) {
             case "Identifier":
                 var varname = on_update.varname;
-                var declNode = Pdg.declarationOf({ // Q: Faalt, want is op zoek naar parent van dit object, en dat bestaat niet.
-                    type: "Identifier",
-                    "name": varname
-                }, genast);
-                console.log(varname);
-                require("./../../utils.js").dump(declNode);
+                var declNode = Pdg.declarationOf(reactiveVarExprs[varname].expression, genast);
                 on_update.graph = {
                     declarationNode: declNode
                 };
