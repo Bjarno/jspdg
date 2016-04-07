@@ -30,7 +30,8 @@ function tiersplit (src, context) {
     });
 
     // Generate list of all identifiers that should be generated
-    var toGenerateIdentifiers = context.callbacks;
+    var toGenerateCallbacks = context.callbacks;
+    var toGenerateIdentifiers = [];
     context.crumbs.forEach(function (dynamic) {
         var on_update = dynamic.on_update;
         var type = on_update.type;
@@ -43,8 +44,13 @@ function tiersplit (src, context) {
         }
     });
 
+    // Join them in one object
+    var toGenerate = {};
+    toGenerate.callbacks = toGenerateCallbacks;
+    toGenerate.identifiers = toGenerateIdentifiers;
+
     // Run pre-analysis
-    var pre_analysis         = pre_analyse(ast, toGenerateIdentifiers),
+    var pre_analysis         = pre_analyse(ast, toGenerate),
         genast               = pre_analysis.ast,
         assumes              = pre_analysis.assumes,
         shared               = pre_analysis.shared,
