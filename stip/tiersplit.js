@@ -29,31 +29,28 @@ function tiersplit (src, context) {
         return Aux.isBlockStm(node) && Comments.isTierAnnotated(node)
     });
 
-    /// <<< Reactive (mapping van identifiers naar declaratienodes via Jipda)
-        // (bij transpilatie: assignments fixen)
-    
-var callbackNames = context.callbacks;
-var reactiveVars = [];
+    // Generate list of all identifiers that should be generated
+    var toGenerateIdentifiers = context.callbacks;
+    context.crumbs.forEach(function (dynamic) {
+        var on_update = dynamic.on_update;
+        var type = on_update.type;
 
-context.crumbs.forEach(function (dynamic) {
-    var on_update = dynamic.on_update;
-    var type = on_update.type;
+        switch (type) {
+            case "Identifier":
+                var varname = on_update.varname;
+                toGenerateIdentifiers.push(varname);
+                break;
+        }
+    });
 
-    switch (type) {
-        case "Identifier":
-            var varname = on_update.varname;
-            reactiveVars.push(varname);
-            break;
-    }
-});
-
-    var pre_analysis = pre_analyse(ast, callbackNames, reactiveVars),
-        genast       = pre_analysis.ast,
-        assumes      = pre_analysis.assumes,
-        shared       = pre_analysis.shared,
-        asyncs       = pre_analysis.asyncs,
-        graphs       = new Stip.Graphs(ast, src, pre_analysis.primitives),
-        reactiveVarExprs = pre_analysis.reactiveVarExprs;
+    // Run pre-analysis
+    var pre_analysis         = pre_analyse(ast, toGenerateIdentifiers),
+        genast               = pre_analysis.ast,
+        assumes              = pre_analysis.assumes,
+        shared               = pre_analysis.shared,
+        asyncs               = pre_analysis.asyncs,
+        graphs               = new Stip.Graphs(ast, src, pre_analysis.primitives),
+        generatedIdentifiers = pre_analysis.identifiers;
 
     // Find declaration nodes for the reactive variables
     context.crumbs.forEach(function (dynamic) {
@@ -63,7 +60,7 @@ context.crumbs.forEach(function (dynamic) {
         switch (type) {
             case "Identifier":
                 var varname = on_update.varname;
-                var declNode = Pdg.declarationOf(reactiveVarExprs[varname].expression, genast);
+                var declNode = Pdg.declarationOf(generatedIdentifiers[varname].expression, genast);
                 on_update.graph = {
                     declarationNode: declNode
                 };
@@ -71,11 +68,13 @@ context.crumbs.forEach(function (dynamic) {
         }
     });
 
-    // Pass context to Reactify transpiler
+    // Pass context to Reactify transpiler before starting Stip
     require("./transpiler/Reactify.js").setContext(context);
 
+    // Start Stip
     Stip.start(graphs);
 
+    // Execute tier split
     var PDG          = graphs.PDG, 
         slicedc      = PDG.sliceDistributedNode(PDG.dclient),
         sliceds      = PDG.sliceDistributedNode(PDG.dserver),

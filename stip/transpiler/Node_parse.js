@@ -55,6 +55,9 @@ var NodeParse = (function () {
                   addBodyStm : function (stm) {
                     this.parsenode.body.body = this.parsenode.body.body.concat(stm);
                   },
+                addBodyStms : function (stms) {
+                    this.parsenode.body.body = this.parsenode.body.body.concat(stms);
+                  },
                   setBody    : function (body) {
                     this.parsenode.body.body = body;
                   },

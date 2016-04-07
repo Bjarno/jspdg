@@ -46,7 +46,7 @@ function slice (src, statementsrc) {
     ast = Hoist.hoist(ast, function (node) {
         return Aux.isBlockStm(node) && Comments.isTierAnnotated(node)
     });
-    var pre_analysis = pre_analyse(ast, []),
+    var pre_analysis = pre_analyse(ast, {callabcks: [], identifiers: []}),
         genast       = pre_analysis.ast,
         assumes      = pre_analysis.assumes,
         shared       = pre_analysis.shared,
@@ -164,5 +164,10 @@ suite('Slicing', function () {
             {varPattern: /_v\d_/ })
     });
 
+    test('adding property', function () {
+        var ast = slice('var z = {y : 1}; z.x = 2; var d = z.x * 2;', 'd = z.x * 2;');
+        compareAst(escodegen.generate(ast.nosetup),
+            'var z; var d; z = {}; z.x = 2; d = z.x * 2;')
+    })
 
 });

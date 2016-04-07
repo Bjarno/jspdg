@@ -1,60 +1,41 @@
-
-/* Gets the ast and an array of strings, which represent names of functions 
+/* Gets the ast and an array of strings, which represent names of functions
    that are used as callback functions on the client side.
    Calls for these functions are automatically added in the client side block.
 */
-var pre_analyse = function (ast, callbackFunctionsC, reactiveVarsC) {
+var pre_analyse = function (ast, toGenerate) { 
     var anonf_ct    = 0;
     var anonf_name  = 'anonf';
-    var primitives  = ["$", "console", "window"]; 
+    var primitives  = ["$", "console", "window"];
     var asyncs      = ["https", "dns", "fs", "proxy"];
-    var anonfC      = [];
-    var anonfS      = [];
     var anonfSh     = [];
-    var decl        = [];
-    var callS       = [];
-    var callC       = [];
     var callSh      = [];
     var assumes     = [];
     var primdefs    = {};
-    var primreturns = {};
     var primtoadd   = {};
     var fundefsC    = [];
     var sharedblock;
-    var reactiveVarExprs = {};
+    var generatedIdentifiers;
 
     function function_args (callnode) {
         return callnode.arguments.filter(function (arg) {
             return Aux.isFunExp(arg) ||
-                   (Aux.isIdentifier(arg) && fundefsC[arg.name])
-        }) 
+                   (Aux.isIdentifier(arg) && fundefsC[arg.name]);
+        });
     }
-    
+
     function createIdentifier (id) {
         return {type:'Identifier', name:id};
     }
 
-    function createIdentifierExpression(id) {
-        var expression = {
-            "type": "ExpressionStatement",
-            "expression": {
-                "type": "Identifier",
-                "name": id
-            }
-        };
-        Ast.augmentAst(expression);
-        return expression;
-    }
-
     function createDeclaration  (id) {
-        return { type:'VariableDeclaration', 
+        return { type:'VariableDeclaration',
                 declarations: [{
                     type:'VariableDeclarator',
                     id: createIdentifier(id),
                     init: null
                 }],
                 kind:'var'
-            }
+            };
     }
 
     function createAssignment  (id, value) {
@@ -66,11 +47,11 @@ var pre_analyse = function (ast, callbackFunctionsC, reactiveVarsC) {
                 left : id,
                 right : value
             }
-        }
+        };
     }
 
     function createFunction  (arg, id) {
-        return {    
+        return {
             type:"ExpressionStatement",
             expression: {
                 type: "AssignmentExpression",
@@ -78,33 +59,33 @@ var pre_analyse = function (ast, callbackFunctionsC, reactiveVarsC) {
                 left: createIdentifier(id),
                 right: arg
             }
-        }
+        };
     }
 
     function createReturnValue  (type) {
         switch (type) {
-            case "Num": 
+            case "Num":
                 return  {
-                            "type": "Literal",
-                            "value": 0
-                        }
+                            type: "Literal",
+                            value: 0
+                        };
             case "String":
                 return  {
-                            "type": "Literal",
-                            "value": ""
-                        }
+                            type: "Literal",
+                            value: ""
+                        };
             case "Bool":
                 return  {
-                            "type": "Literal",
-                            "value": true,
-                        }
+                            type: "Literal",
+                            value: true
+                        };
             case "Obj":
                 return {
-                            "type": "ObjectExpression",
-                            "properties": []
-                       }
+                            type: "ObjectExpression",
+                            properties: []
+                       };
             default:
-                return null
+                return null;
             }
 
     }
@@ -133,24 +114,24 @@ var pre_analyse = function (ast, callbackFunctionsC, reactiveVarsC) {
 
     function createFunDecl (id, args, returntype) {
         var fundecl =  {
-            "type": "FunctionDeclaration",
-            "id": {
-                "type": "Identifier",
-                "name": id
+            type: "FunctionDeclaration",
+            id: {
+                type: "Identifier",
+                name: id
             },
-            "params": args,
-            "defaults": [],
-            "body": {
-                "type": "BlockStatement",
-                "body": [
+            params: args,
+            defaults: [],
+            body: {
+                type: "BlockStatement",
+                body: [
                     {
-                        "type": "ReturnStatement",
-                        "argument": createReturnValue(returntype)
+                        type: "ReturnStatement",
+                        argument: createReturnValue(returntype)
                     }
                 ]
             },
-            "generator": false,
-            "expression": false
+            generator: false,
+            expression: false
         };
         Ast.augmentAst(fundecl);
         return fundecl;
@@ -158,15 +139,15 @@ var pre_analyse = function (ast, callbackFunctionsC, reactiveVarsC) {
 
     function createCall (id) {
         var call = {
-            type:"ExpressionStatement",
+            type: "ExpressionStatement",
             expression: {
-                type:"CallExpression",
+                type: "CallExpression",
                 callee: createIdentifier(id),
-                arguments:[],
+                arguments: [],
                 isPreAnalyse: true
             }
         };
-        Ast.augmentAst(call);        
+        Ast.augmentAst(call);
         return call;
     }
 
@@ -185,13 +166,13 @@ var pre_analyse = function (ast, callbackFunctionsC, reactiveVarsC) {
                 regexp = /\(.*?\)/;
                 if (assume.search(regexp) > 0) {
                     args = assume.match(regexp)[0].slice(1,-1).split(",");
-                    args = args.map(function (arg) { return createIdentifier(arg)});
+                    args = args.map(function (arg) { return createIdentifier(arg);});
                     name = assume.slice(0, assume.indexOf("("));
                     assumes.push(createFunDecl(name, args, type));
                 } else {
-                    assumes.push(createDeclaration(assume))
+                    assumes.push(createDeclaration(assume));
                 }
-            })
+            });
         }
     }
 
@@ -213,9 +194,8 @@ var pre_analyse = function (ast, callbackFunctionsC, reactiveVarsC) {
         while(!Aux.isProgram(parent)) {
             if (Aux.isBlockStm(parent) && parent.leadingComment) {
                 break;
-            } else {
-                parent = Ast.parent(parent, ast);
             }
+            parent = Ast.parent(parent, ast);
         }
         if (Aux.isBlockStm(parent)) {
             return parent.leadingComment;
@@ -228,9 +208,8 @@ var pre_analyse = function (ast, callbackFunctionsC, reactiveVarsC) {
         while(!Aux.isProgram(parent)) {
             if (Aux.isBlockStm(parent)) {
                 break;
-            } else {
-                parent = Ast.parent(parent, ast);
             }
+            parent = Ast.parent(parent, ast);
         }
         return parent;
     }
@@ -238,7 +217,7 @@ var pre_analyse = function (ast, callbackFunctionsC, reactiveVarsC) {
 
     function generateCallbackCalls() {
         var calls = [];
-        callbackFunctionsC.map(function (cb) {
+        toGenerate.callbacks.map(function (cb) {
             var call = createCall(cb);
             var func = fundefsC[cb];
 
@@ -249,10 +228,11 @@ var pre_analyse = function (ast, callbackFunctionsC, reactiveVarsC) {
             if (func) {
                 func.params.map(function (param) {
                     call.expression.arguments = call.expression.arguments.concat({
-                        "type": "Literal",
-                        "value": null
+                        type: "Literal",
+                        value: null
                     });
                 });
+                Ast.augmentAst(call);
                 calls.push(call);
             }
         });
@@ -260,23 +240,18 @@ var pre_analyse = function (ast, callbackFunctionsC, reactiveVarsC) {
         return calls;
     }
 
-    function generateReativeVarExpressions() {
-        var expressions = [];
-        var nodes = {};
 
-        reactiveVarsC.forEach(function (varname) {
-            var expression = createIdentifierExpression(varname);
-            expression.leadingComment = {type: "Block", value:"@generated", range: [0,16]};
-            expression.clientCalls = 1;
-
-            // Add to result expressions to be added to AST tree
-            expressions.push(expression);
-            
-            // Add node to object to reference to later.
-            reactiveVarExprs[varname] = expression;
+    function generateIdentifiers() {
+        var identifiers = {};
+        toGenerate.identifiers.map(function (name) {
+            var id = createIdentifier(name);
+            id.leadingComment = {type: "Block", value:"@generated", range: [0,16]};
+            Ast.augmentAst(id);
+            identifiers[name] = id;
         });
+        generatedIdentifiers = identifiers;
+        return identifiers;
 
-        return expressions;
     }
 
     Aux.walkAst(ast, {
@@ -285,8 +260,9 @@ var pre_analyse = function (ast, callbackFunctionsC, reactiveVarsC) {
             /* Needs to be done upfront */
             if (Aux.isFunDecl(node)) {
                 var comment = isBlockAnnotated(node);
-                if (comment && Comments.isClientAnnotated(comment)) 
+                if (comment && Comments.isClientAnnotated(comment)) {
                     fundefsC[node.id.name] = node;
+                }
             }
         },
 
@@ -300,7 +276,7 @@ var pre_analyse = function (ast, callbackFunctionsC, reactiveVarsC) {
                 extractAssumes(node.leadingComment.value);
             }
 
-            /* If a block has updateFirst and/or updateLast property, 
+            /* If a block has updateFirst and/or updateLast property,
                these statements should be added in the beginning / ending of the block */
             if (Aux.isBlockStm(node) || Aux.isProgram(node)) {
                 var comment = node.leadingComment;
@@ -314,39 +290,39 @@ var pre_analyse = function (ast, callbackFunctionsC, reactiveVarsC) {
                     node.body = node.updateFirst.concat(node.body);
                 }
                 if (node.updateLast) {
-                    node.body = node.body.concat(node.updateLast)
-                }
-                   
-                if (comment && Comments.isClientAnnotated(comment)) {
-                    node.body = node.body.concat(generateCallbackCalls());
+                    node.body = node.body.concat(node.updateLast);
                 }
 
                 if (comment && Comments.isClientAnnotated(comment)) {
-                    node.body = node.body.concat(generateReativeVarExpressions());
+                    node.body = node.body.concat(generateCallbackCalls());
+                    node.body = node.body.concat(generateIdentifiers());
                 }
             }
 
             /* If a node is tagged as primitive, add it to the primitive definitions.
-               This causes later accesses to the primitive (such as element.jquerymethod()) 
+               This causes later accesses to the primitive (such as element.jquerymethod())
                to be added to e.g. the jquery primitive */
             if (node.primitive) {
-                if (Aux.isVarDeclarator(node))
+                if (Aux.isVarDeclarator(node)) {
                   primdefs[node.id.name] = node;
-                else if (Aux.isAssignmentExp(node))
+                }
+                else if (Aux.isAssignmentExp(node)) {
                   primdefs[node.left.name] = node;
+                }
             }
 
             if (Aux.isMemberExpression(node) && !node.primitive &&
               !Aux.isThisExpression(node.object)) {
-                var name = node.property.name;
+
                 var objname;
+                name = node.property.name;
                 if (Aux.isCallExp(node.object)) {
                     objname = node.object.callee.name;
                 }
-                else { 
+                else {
                     objname = node.object.name;
                 }
-                
+
                 primtoadd[objname] ? primtoadd[objname].push(name) : primtoadd[objname] = [name] ;
             }
 
@@ -361,22 +337,24 @@ var pre_analyse = function (ast, callbackFunctionsC, reactiveVarsC) {
                 if (primitives.indexOf(name) >= 0 ) {
                     node.primitive = true;
                     node.parent = Ast.parent(node, ast);
-                    if (Aux.isExpStm(node.parent) || Aux.isVarDecl(node.parent) || 
-                        Aux.isAssignmentExp(node.parent) || Aux.isVarDeclarator(node.parent))
+                    if (Aux.isExpStm(node.parent) || Aux.isVarDecl(node.parent) ||
+                        Aux.isAssignmentExp(node.parent) || Aux.isVarDeclarator(node.parent)) {
                         node.parent.primitive = name;
+                    }
+
                 }
                 if (anonf.length > 0) {
-                    var comment    = isBlockAnnotated(node);
                     var enclBlock  = getCurrentBlock(node);
                     var bodyFirst  = [];
                     var bodyLast   = [];
+                    comment = isBlockAnnotated(node);
                     node.arguments = node.arguments.map(function (arg) {
-                        var comment = isBlockAnnotated(arg);
+                        comment = isBlockAnnotated(arg);
                         if (Aux.isFunExp(arg)) {
-                            var name = anonf_name + ++anonf_ct;
+                            name = anonf_name + ++anonf_ct;
                             var func = createFunDecl(name, arg.params);
                             var call = createCall(name);
-                            
+
 
                             call.leadingComment = {type: "Block", value:"@generated", range: [0,16]};
                             if (comment && Comments.isClientAnnotated(comment)) {
@@ -388,8 +366,8 @@ var pre_analyse = function (ast, callbackFunctionsC, reactiveVarsC) {
                             func.body = arg.body;
                             func.params.map(function (param) {
                                 call.expression.arguments = call.expression.arguments.concat({
-                                        "type": "Literal",
-                                        "value": null
+                                        type: "Literal",
+                                        value: null
                                     });
                             });
                             Ast.augmentAst(func);
@@ -409,8 +387,9 @@ var pre_analyse = function (ast, callbackFunctionsC, reactiveVarsC) {
                             bodyLast = bodyLast.concat(call);
                             return arg;
                         }
-                        else
+                        else {
                             return arg;
+                        }
                     });
 
                     if (!enclBlock.updateFirst) {
@@ -424,28 +403,28 @@ var pre_analyse = function (ast, callbackFunctionsC, reactiveVarsC) {
             }
 
         }
-    })
+    });
 
     ast.body = js_libs.getLibraries().concat(anonfSh).concat(callSh).concat(ast.body);
 
-    return  { 
-        ast        : ast,
-        assumes    : js_libs.getLibraries().concat(assumes),
-        shared     : sharedblock,
-        primitives : primitives,
-        asyncs     : asyncs,
-        reactiveVarExprs: reactiveVarExprs
+    return  {
+        ast         : ast,
+        assumes     : js_libs.getLibraries().concat(assumes),
+        shared      : sharedblock,
+        primitives  : primitives,
+        asyncs      :  asyncs,
+        identifiers : generatedIdentifiers
     };
-}
+};
 
 
-if (typeof module !== 'undefined' && module.exports != null) {
+if (typeof module !== 'undefined' && module.exports !== null) {
     Ast = require('../jipda-pdg/ast.js').Ast;
     Aux = require('./aux.js').Aux;
     Comments = require('./annotations.js').Comments;
-    
-    var js_libs  = require('./jslibs.js').js_libs;
 
-    exports.pre_analyse         = pre_analyse;
-    exports.asyncs              = ["https", "dns", "fs", "proxy"];
+    js_libs = require('./jslibs.js').js_libs;
+
+    exports.pre_analyse = pre_analyse;
+    exports.asyncs      = ["https", "dns", "fs", "proxy"];
 }
