@@ -2,8 +2,12 @@
  *               TRANSFORMATIONS FOR REDSTONE                   *
  ****************************************************************/
 
-
 var Reactify = (function () {
+
+    var context = null;
+    var setContext = function(newContext) {
+        context = newContext;
+    }
 
     var transformer = {};
     
@@ -11,6 +15,7 @@ var Reactify = (function () {
         Nodeify = require('./Nodeify').Nodeify;
     }
 
+    // Inherit almost everything from Nodeify
     transformer.transformVariableDecl = Nodeify.transformVariableDecl;
     transformer.transformAssignmentExp = Nodeify.transformAssignmentExp;
     transformer.transformBinaryExp = Nodeify.transformBinaryExp;
@@ -31,15 +36,28 @@ var Reactify = (function () {
     transformer.transformExitNode = Nodeify.transformExitNode;
 
     var onAssignment = function onAssignment(transpiler) {
-        // TODO: Do reactivity stuff here!
         console.log("Reactify.transformAssignmentExp()!");
-        return Nodeify.transformAssignmentExp(transpiler);
+
+        console.log(context);
+        
+        var result = Nodeify.transformAssignmentExp(transpiler);
+        var node      = transpiler.node;
+            parsenode = node.parsenode,
+            left      = parsenode.expression.left,
+            varname   = left.name;
+
+        // Check if varname is in the list of reactive variables
+        // And if they have the same declaration node
+
+        return result;
     };
 
     transformer.transformAssignmentExp = onAssignment;
 
+
     if (typeof module !== 'undefined' && module.exports != null) {
         exports.Reactify  = transformer;
+        exports.setContext = setContext;
     }
 
     return transformer;

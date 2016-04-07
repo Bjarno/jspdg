@@ -71,6 +71,9 @@ context.crumbs.forEach(function (dynamic) {
         }
     });
 
+    // Pass context to Reactify transpiler
+    require("./transpiler/Reactify.js").setContext(context);
+
     Stip.start(graphs);
 
     var PDG          = graphs.PDG, 
