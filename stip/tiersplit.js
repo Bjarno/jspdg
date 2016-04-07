@@ -58,6 +58,11 @@ function tiersplit (src, context) {
         graphs               = new Stip.Graphs(ast, src, pre_analysis.primitives),
         generatedIdentifiers = pre_analysis.identifiers;
 
+    // Set pre-analysis AST in context
+    context.stip = {
+        generatedAST: genast
+    };
+
     // Find declaration nodes for the reactive variables
     context.crumbs.forEach(function (dynamic) {
         var on_update = dynamic.on_update;
@@ -76,6 +81,7 @@ function tiersplit (src, context) {
 
     // Pass context to Reactify transpiler before starting Stip
     require("./transpiler/Reactify.js").setContext(context);
+
 
     // Start Stip
     Stip.start(graphs);

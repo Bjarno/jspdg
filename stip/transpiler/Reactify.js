@@ -36,18 +36,37 @@ var Reactify = (function () {
     transformer.transformExitNode = Nodeify.transformExitNode;
 
     var onAssignment = function onAssignment(transpiler) {
-        console.log("Reactify.transformAssignmentExp()!");
-
-        console.log(context);
-        
         var result = Nodeify.transformAssignmentExp(transpiler);
         var node      = transpiler.node;
             parsenode = node.parsenode,
             left      = parsenode.expression.left,
             varname   = left.name;
 
+        console.log("Reactify.transformAssignmentExp()!");
+        console.log("Varname: " + varname);
+
         // Check if varname is in the list of reactive variables
         // And if they have the same declaration node
+
+        var genast = context.stip.generatedAST;
+
+        context.crumbs.forEach(function(crumb) {
+            var on_update = crumb.on_update;
+            var type = on_update.type;
+            switch (type) {
+                case 'Identifier':
+                    var varnameCrumb = on_update.varname;
+                    if (varname == varnameCrumb) {
+                        var declNode1 = Pdg.declarationOf(left, genast);
+                        var declNode2 = on_update.graph.declarationNode;
+                        var sameDeclNode = (declNode1 == declNode2);
+
+                        if (sameDeclNode) {
+                            // TODO: Transform
+                        }
+                    }
+            }
+        });
 
         return result;
     };
