@@ -104,6 +104,8 @@ var Reactify = (function () {
 
         var genast = context.stip.generatedAST;
 
+        var updateGUICalls = [];
+
         context.crumbs.forEach(function(crumb) {
             var on_update = crumb.on_update;
             var type = on_update.type;
@@ -120,19 +122,24 @@ var Reactify = (function () {
                         var sameDeclNode = (declNode1 == declNode2);
 
                         if (sameDeclNode) {
-                            var oldparsenode = parsenode;
-                            var lambda = createEmptyLambdaCall();
-                            lambda.addToBody(oldparsenode);
-                            lambda.addToBody(createUpdateGuiCall(crumb.id, varname));
-                            // TODO: Group together all crumb ids
-
-                            transpiler.transpiledNode = lambda.node;
+                            updateGUICalls.push(createUpdateGuiCall(crumb.id, varname));
                         }
                         break;
                 }
-            }
-            
+            }    
         });
+
+        if (updateGUICalls.length > 0) {
+            var oldparsenode = parsenode;
+            var lambda = createEmptyLambdaCall();
+            lambda.addToBody(oldparsenode);
+
+            updateGUICalls.forEach(function(call) {
+                lambda.addToBody(call);
+            });
+
+            transpiler.transpiledNode = lambda.node;
+        }
 
         return transpiler;
     };
