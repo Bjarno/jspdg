@@ -35,8 +35,37 @@ var Reactify = (function () {
     transformer.transformFormalParameter = Nodeify.transformFormalParameter;
     transformer.transformExitNode = Nodeify.transformExitNode;
 
+    var createEmptyLambdaCall = function() {
+        return {
+            addToBody: function(expr) {
+                this.node.expression.callee.body.body.push(expr);
+            },
+            node: {
+                "type": "ExpressionStatement",
+                "expression": {
+                    "type": "CallExpression",
+                    "callee": {
+                        "type": "FunctionExpression",
+                        "id": null,
+                        "params": [],
+                        "defaults": [],
+                        "body": {
+                            "type": "BlockStatement",
+                            "body": []
+                        },
+                        "generator": false,
+                        "expression": false
+                    },
+                    "arguments": []
+                }
+            }
+        };
+    }
+
+    // Change what happens on an assignment
     var onAssignment = function onAssignment(transpiler) {
-        var result = Nodeify.transformAssignmentExp(transpiler);
+        transpiler = Nodeify.transformAssignmentExp(transpiler);
+
         var node      = transpiler.node;
             parsenode = node.parsenode,
             left      = parsenode.expression.left,
@@ -62,13 +91,18 @@ var Reactify = (function () {
                         var sameDeclNode = (declNode1 == declNode2);
 
                         if (sameDeclNode) {
-                            // TODO: Transform
+                            var oldparsenode = parsenode;
+                            var lambda = createEmptyLambdaCall();
+                            lambda.addToBody(oldparsenode);
+                            // TODO: Add call to update GUI, depending on crumb type
+
+                            transpiler.transpiledNode = lambda.node;
                         }
                     }
             }
         });
 
-        return result;
+        return transpiler;
     };
 
     transformer.transformAssignmentExp = onAssignment;
