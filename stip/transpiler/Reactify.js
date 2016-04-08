@@ -60,7 +60,31 @@ var Reactify = (function () {
                 }
             }
         };
-    }
+    };
+
+    var createUpdateGuiCall = function(idname, varname) {
+        return {
+            "type": "ExpressionStatement",
+            "expression": {
+                "type": "CallExpression",
+                "callee": {
+                    "type": "Identifier",
+                    "name": "RUpdateGUI"
+                },
+                "arguments": [
+                    {
+                        "type": "Literal",
+                        "value": idname,
+                        "raw": "\"" + idname + "\""
+                    },
+                    {
+                        "type": "Identifier",
+                        "name": varname
+                    }
+                ]
+            }
+        };
+    };
 
     // Change what happens on an assignment
     var onAssignment = function onAssignment(transpiler) {
@@ -94,6 +118,7 @@ var Reactify = (function () {
                             var oldparsenode = parsenode;
                             var lambda = createEmptyLambdaCall();
                             lambda.addToBody(oldparsenode);
+                            lambda.addToBody(createUpdateGuiCall(crumb.id, varname));
                             // TODO: Add call to update GUI, depending on crumb type
 
                             transpiler.transpiledNode = lambda.node;
