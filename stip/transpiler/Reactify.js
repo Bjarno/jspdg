@@ -112,8 +112,6 @@ var Reactify = (function () {
             var varnameCrumb = on_update.varname;
             var declNode2 = on_update.graph.declarationNode;
 
-            console.log(varname + "=?=" + varnameCrumb);
-
             if (varname == varnameCrumb) {
                 switch (type) {
                     case 'Identifier':
