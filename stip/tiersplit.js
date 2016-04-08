@@ -35,13 +35,8 @@ function tiersplit (src, context) {
     context.crumbs.forEach(function (dynamic) {
         var on_update = dynamic.on_update;
         var type = on_update.type;
-
-        switch (type) {
-            case "Identifier":
-                var varname = on_update.varname;
-                toGenerateIdentifiers.push(varname);
-                break;
-        }
+        var varname = on_update.varname;
+        toGenerateIdentifiers.push(varname);
     });
 
     // Join them in one object
@@ -67,16 +62,11 @@ function tiersplit (src, context) {
     context.crumbs.forEach(function (dynamic) {
         var on_update = dynamic.on_update;
         var type = on_update.type;
-
-        switch (type) {
-            case "Identifier":
-                var varname = on_update.varname;
-                var declNode = Pdg.declarationOf(generatedIdentifiers[varname].expression, genast);
-                on_update.graph = {
-                    declarationNode: declNode
-                };
-                break;
-        }
+        var varname = on_update.varname;
+        var declNode = Pdg.declarationOf(generatedIdentifiers[varname].expression, genast);
+        on_update.graph = {
+            declarationNode: declNode
+        };
     });
 
     // Pass context to Reactify transpiler before starting Stip

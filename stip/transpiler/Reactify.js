@@ -62,7 +62,7 @@ var Reactify = (function () {
         };
     };
 
-    var createUpdateGuiCall = function(idname, varname) {
+    var createUpdateGuiCall = function(idname, object) {
         return {
             "type": "ExpressionStatement",
             "expression": {
@@ -79,7 +79,7 @@ var Reactify = (function () {
                     },
                     {
                         "type": "Identifier",
-                        "name": varname
+                        "name": object
                     }
                 ]
             }
@@ -95,8 +95,9 @@ var Reactify = (function () {
             left      = parsenode.expression.left,
             varname   = left.name;
 
-        console.log("Reactify.transformAssignmentExp()!");
-        console.log("Varname: " + varname);
+        if (varname === undefined) {
+            return transpiler;
+        }
 
         // Check if varname is in the list of reactive variables
         // And if they have the same declaration node
@@ -106,12 +107,16 @@ var Reactify = (function () {
         context.crumbs.forEach(function(crumb) {
             var on_update = crumb.on_update;
             var type = on_update.type;
-            switch (type) {
-                case 'Identifier':
-                    var varnameCrumb = on_update.varname;
-                    if (varname == varnameCrumb) {
+            var varnameCrumb = on_update.varname;
+            var declNode2 = on_update.graph.declarationNode;
+
+            console.log(varname + "=?=" + varnameCrumb);
+
+            if (varname == varnameCrumb) {
+                switch (type) {
+                    case 'Identifier':
+                    case 'MemberExpression':
                         var declNode1 = Pdg.declarationOf(left, genast);
-                        var declNode2 = on_update.graph.declarationNode;
                         var sameDeclNode = (declNode1 == declNode2);
 
                         if (sameDeclNode) {
@@ -119,12 +124,14 @@ var Reactify = (function () {
                             var lambda = createEmptyLambdaCall();
                             lambda.addToBody(oldparsenode);
                             lambda.addToBody(createUpdateGuiCall(crumb.id, varname));
-                            // TODO: Add call to update GUI, depending on crumb type
+                            // TODO: Group together all crumb ids
 
                             transpiler.transpiledNode = lambda.node;
                         }
-                    }
+                        break;
+                }
             }
+            
         });
 
         return transpiler;
