@@ -40,9 +40,10 @@ function tiersplit (src, context) {
     });
 
     // Join them in one object
-    var toGenerate = {};
-    toGenerate.callbacks = toGenerateCallbacks;
-    toGenerate.identifiers = toGenerateIdentifiers;
+    var toGenerate = {
+        callbacks: toGenerateCallbacks,
+        identifiers: toGenerateIdentifiers
+    };
 
     // Run pre-analysis
     var pre_analysis         = pre_analyse(ast, toGenerate),
@@ -69,9 +70,9 @@ function tiersplit (src, context) {
         };
     });
 
-    // Pass context to Reactify transpiler before starting Stip
+    // Pass context to Reactify transpiler before starting Stip, so it has access to the crumbs
+    // !!! Node.js only !!!
     require("./transpiler/Reactify.js").setContext(context);
-
 
     // Start Stip
     Stip.start(graphs);

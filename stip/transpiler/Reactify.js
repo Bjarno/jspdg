@@ -4,11 +4,13 @@
 
 var Reactify = (function () {
 
+    // The context Reactify should work on
     var context = null;
     var setContext = function(newContext) {
         context = newContext;
     }
 
+    // The transpiler for Redstone
     var transformer = {};
     
     if (typeof module !== 'undefined' && module.exports != null) {
@@ -35,6 +37,9 @@ var Reactify = (function () {
     transformer.transformFormalParameter = Nodeify.transformFormalParameter;
     transformer.transformExitNode = Nodeify.transformExitNode;
 
+    /**
+     * Create an empty call to a directly created blank anonymous function, without any parameters.
+     */
     var createEmptyLambdaCall = function() {
         return {
             addToBody: function(expr) {
@@ -62,6 +67,9 @@ var Reactify = (function () {
         };
     };
 
+    /**
+     * Create a call to update the GUI, given the idName of the crumb and the name of the variable containing the current value.
+     */
     var createUpdateGuiCall = function(idname, object) {
         return {
             "type": "ExpressionStatement",
@@ -104,6 +112,7 @@ var Reactify = (function () {
 
         var genast = context.stip.generatedAST;
 
+        // Create array to temporary store all calls to update the GUI
         var updateGUICalls = [];
 
         context.crumbs.forEach(function(crumb) {
@@ -112,6 +121,7 @@ var Reactify = (function () {
             var varnameCrumb = on_update.varname;
             var declNode2 = on_update.graph.declarationNode;
 
+            // If this variable name is the same as the variable name in the crumb
             if (varname == varnameCrumb) {
                 switch (type) {
                     case 'Identifier':
@@ -119,23 +129,29 @@ var Reactify = (function () {
                         var declNode1 = Pdg.declarationOf(left, genast);
                         var sameDeclNode = (declNode1 == declNode2);
 
+                        // And they share the same declaration node: create call to update GUI
                         if (sameDeclNode) {
-                            updateGUICalls.push(createUpdateGuiCall(crumb.id, varname));
+                            var updateGUICall = createUpdateGuiCall(crumb.id, varname);
+                            updateGUICalls.push(updateGUICall);
                         }
                         break;
                 }
             }    
         });
 
-        if (updateGUICalls.length > 0) {
+        // Only do something if there is at least one call to update the GUI 
+        if (updateGUICalls.length >= 1) {
+            // Create new empty lambda call, and add the original assignment node
             var oldparsenode = parsenode;
             var lambda = createEmptyLambdaCall();
             lambda.addToBody(oldparsenode);
 
+            // Add all calls to update the GUI too
             updateGUICalls.forEach(function(call) {
                 lambda.addToBody(call);
             });
 
+            // Output the result
             transpiler.transpiledNode = lambda.node;
         }
 
@@ -152,5 +168,4 @@ var Reactify = (function () {
 
     return transformer;
 
-
-})()
+})();
