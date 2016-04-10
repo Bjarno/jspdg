@@ -238,16 +238,15 @@ var pre_analyse = function (ast, toGenerate) {
 
     function generateCallbackCalls() {
         var calls = [];
-        toGenerate.callbacks.map(function (cb) {
+        toGenerate.callbacks.forEach(function (cb) {
             var call = createCall(cb);
             var func = fundefsC[cb];
-
 
             call.leadingComment = {type: "Block", value:"@generated", range: [0,16]};
             call.clientCalls = 1;
 
             if (func) {
-                func.params.map(function (param) {
+                func.params.forEach(function (param) {
                     call.expression.arguments = call.expression.arguments.concat({
                         "type": "Literal",
                         "value": null

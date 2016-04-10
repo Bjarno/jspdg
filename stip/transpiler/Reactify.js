@@ -8,7 +8,7 @@ var Reactify = (function () {
     var context = null;
     var setContext = function(newContext) {
         context = newContext;
-    }
+    };
 
     // The transpiler for Redstone
     var transformer = {};
