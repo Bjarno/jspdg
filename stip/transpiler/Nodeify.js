@@ -32,13 +32,47 @@ var Nodeify = (function () {
                     },
                 createCallback : NodeParse.callback,
                 shouldTransform : shouldTransform,
+                shouldTransformData : shouldTransformData,
                 createAsyncFunction : NodeParse.asyncFun,
                 createCbCall : NodeParse.createCallCb,
                 createRPCReturn : NodeParse.RPCReturn,
-                createAsyncReplyCall : NodeParse.asyncReplyC
+                createAsyncReplyCall : NodeParse.asyncReplyC,
+                createDataGetter : NodeParse.createDataGetter,
+                createDataSetter : NodeParse.createDataSetter
             };
             transpiler.transformCPS = CPSTransform;
         }
+    }
+
+    var shouldTransformData = function (data) {
+        var dtype = data.getdtype();
+        var otherdtype = false;
+
+        /* Declaration */
+        if (data.isStatementNode && Aux.isVarDecl(data.parsenode)) {
+            if (data.getOutNodes(EDGES.REMOTED).length > 0)
+                return true;
+            else  {       
+                data.getOutNodes(EDGES.DATA).concat(data.getOutNodes(EDGES.REMOTED))
+                    .map(function (node) {
+                    if (!data.equalsdtype(node))
+                        otherdtype = true;
+                });
+                    return otherdtype;
+            }
+
+        }
+
+        if (data.getInEdges(EDGES.REMOTED).length > 0)
+            return true;
+
+        data.getInNodes(EDGES.DATA).concat(data.getInNodes(EDGES.REMOTED))
+            .map(function (node) {
+                if ( !data.equalsdtype(node))
+                    otherdtype = true;
+            });
+        return otherdtype;
+
     }
 
     var shouldTransform = function (call) {
@@ -148,8 +182,109 @@ var Nodeify = (function () {
 
         return transpiler;
     }
-    transformer.transformVariableDecl = nodeifyVarDecl;
-    transformer.transformAssignmentExp = nodeifyVarDecl;
+
+    function transformVariableDeclData (transpiler) {
+        var transpiled = nodeifyVarDecl(transpiler),
+            node = transpiled.node,
+            dtype = node.getdtype(),
+            tier = transpiler.options.tier,
+            servercnt = 0,
+            clientcnt = 0,
+            sharedcnt = 0,
+            declarationnode,
+            declarationtype,
+            closeup, name, init;
+        makeTransformer(transpiler);
+
+        if (Aux.isVarDecl(node.parsenode)) {
+            declarationnode = node;
+        } 
+        else if (Aux.isExpStm(node.parsenode) && Aux.isAssignmentExp(node.parsenode.expression)) {
+            if (Aux.isMemberExpression(node.parsenode.expression.left) && 
+                Aux.isThisExpression(node.parsenode.expression.left.object)) {
+                declarationnode = node;
+            }
+            else  {
+                node.getInNodes(EDGES.DATA).concat(node.getInNodes(EDGES.REMOTED))
+                    .map(function(n) {
+                        if (n.isStatementNode &&
+                            (Aux.isVarDecl(n.parsenode) ||
+                             Aux.isVarDeclarator(n.parsenode)) &&
+                            n.name === node.name)
+                        declarationnode = n;
+                    });
+            }
+
+        }
+
+        /* no declaration node in the case of actual parameter */
+        if (declarationnode) {
+            declarationtype = declarationnode.getdtype();
+            if (!declarationnode.sharedcnt) {
+                declarationnode.getOutNodes(EDGES.DATA).concat(declarationnode.getOutNodes(EDGES.REMOTED))
+                    .map(function (dnode) {
+                        var dtype = dnode.getdtype();
+                        if (dtypeEquals(dtype, DNODES.SHARED)) sharedcnt++;
+                        if (dtypeEquals(dtype, DNODES.SERVER)) servercnt++;
+                        if (dtypeEquals(dtype, DNODES.CLIENT)) clientcnt++;
+                });
+                /* Store for later */
+                declarationnode.sharedcnt = sharedcnt;
+                declarationnode.servercnt = servercnt;
+                declarationnode.clientcnt = clientcnt;
+
+            }
+
+            var getter = NodeParse.createDataGetter(node.name);
+            var setter = transpiler.parseUtils.createDataSetter(node.name, NodeParse.createIdentifier(node.name));
+
+            if (Aux.isExpStm(node.parsenode) && Aux.isMemberExpression(node.parsenode.expression.left)) {
+                setter.expression.arguments[0] = NodeParse.createLiteral(node.name);
+                setter.expression.arguments[1] = node.parsenode.expression.left.object;
+            }
+
+            /* declaration node is shared */
+            if (dtypeEquals(declarationtype, DNODES.SHARED)) {
+                /* Declaration node itself */
+                if (Aux.isVarDecl(node.parsenode) && 
+                    declarationnode.clientcnt > 0 &&
+                    declarationnode.servercnt > 0 ) {
+                    if (tier === DNODES.CLIENT.name) {
+                        transpiled.transpiledNode = Aux.clone(transpiled.transpiledNode);
+                        transpiled.transpiledNode.declarations[0].init = getter.expression;
+                    }
+                }
+                else if (declarationnode.clientcnt > 0 && declarationnode.servercnt > 0) {
+                    if (tier === DNODES.CLIENT.name)
+                        transpiled.transpiledNode = false;
+                    else
+                        transpiled.closeupNode = [setter];
+                }
+            }
+
+            if (dtypeEquals(declarationtype, DNODES.SERVER)) {
+                if (Aux.isVarDecl(node.parsenode) &&
+                    declarationnode.clientcnt > 0) {
+                    if (tier === DNODES.CLIENT.name) {
+                        transpiled.transpiledNode = Aux.clone(transpiled.transpiledNode);
+                        transpiled.transpiledNode.declarations[0].init = getter.expression;
+                    }
+                } 
+                /* Defined on server, used on server */
+                else if (declarationnode.equalsdtype(node) && declarationnode.clientcnt > 0) {
+                    transpiled.closeupNode = [setter];
+                }
+                else if (declarationnode.clientcnt > 0) {
+                    transpiled.closeupNode = [setter];
+                }
+            }
+        }
+
+        return transpiled;
+    }
+
+    transformer.transformVariableDecl = transformVariableDeclData;
+    transformer.transformAssignmentExp = transformVariableDeclData;
 
     /* Binary Expression */
     transformer.transformBinaryExp = JSify.transformBinaryExp;
@@ -203,8 +338,10 @@ var Nodeify = (function () {
         bodynodes.map(function (n) {
             transpiled = Transpiler.transpile(Transpiler.copyTranspileObject(transpiler, n));
             if(nodesContains(transpiler.nodes, n)) 
-                body.push(transpiled.transpiledNode);
+                body = body.concat(transpiled.getTransformed());
             transpiler.nodes = transpiled.nodes.remove(n);
+            transpiled.closeupNode = transpiled.setupNode = [];
+            Transpiler.copySetups(transpiled, transpiler);
         });
 
         transpiler.nodes = transpiler.nodes.remove(node);
@@ -305,27 +442,65 @@ var Nodeify = (function () {
             actual_outs = node.getActualOut(),  
             parent      = Ast.parent(node.parsenode, transpiler.ast),
             entryNode   = node.getEntryNode()[0],
-            transpiled;
+            callargs    = 0,
+            sharedcnt = servercnt = clientcnt = 0,
+            transpiled, declarationnode, declarationtype;
         makeTransformer(transpiler);
 
+        arguments = actual_ins.filter(function (a_in) {
+            return nodesContains(transpiler.nodes, a_in);
+        }).map(function (a_in) {
+            return a_in.parsenode;
+        });
+       
         actual_ins.map(function (a_in) {
-            a_in.getOutNodes(EDGES.CONTROL)
-                .map(function (n) {
-                    /* TODO: parsenode */
-                    transpiler.nodes = Transpiler.transpile(Transpiler.copyTranspileObject(transpiler, n)).nodes;
-                })
             transpiler.nodes = transpiler.nodes.remove(a_in);
             a_in.getOutNodes(EDGES.CONTROL)
                 .filter(function (n) {
-                    return n.isCallNode;
+                    return n.isCallNode
                 })
                 .map(function (n) {
+                    callargs++;
                     transpiler.nodes = transpiler.nodes.remove(n);
-                })
+                });
         });
         actual_outs.map(function (a_out) {
             transpiler.nodes = transpiler.nodes.remove(a_out);
         });
+
+        if (Aux.isMemberExpression(Pdg.getCallExpression(node.parsenode).callee)) {
+            node.getInNodes(EDGES.DATA).concat(node.getInNodes(EDGES.REMOTED))
+                    .map(function(n) {
+                        if (n.isStatementNode && 
+                            (Aux.isVarDecl(n.parsenode) ||
+                             Aux.isVarDeclarator(n.parsenode))   &&
+                            n.name === Pdg.getCallExpression(node.parsenode).callee.object.name)
+                        declarationnode = n;
+                    })
+            if (declarationnode) {
+                declarationtype = declarationnode.getdtype();
+                if (!declarationnode.sharedcnt) {
+                    declarationnode.getOutNodes(EDGES.DATA).concat(declarationnode.getOutNodes(EDGES.REMOTED))
+                        .map(function (dnode) {
+                            var dtype = dnode.getdtype();
+                            if (dtypeEquals(dtype, DNODES.SHARED)) sharedcnt++;
+                            if (dtypeEquals(dtype, DNODES.SERVER)) servercnt++;
+                            if (dtypeEquals(dtype, DNODES.CLIENT)) clientcnt++;
+                    });
+                    /* Store for later */
+                    declarationnode.sharedcnt = sharedcnt;
+                    declarationnode.servercnt = servercnt;
+                    declarationnode.clientcnt = clientcnt;
+
+                }
+                /* used on client and server? */
+                if (declarationnode.servercnt > 0 && declarationnode.clientcnt > 0) {
+                    transpiler.setupNode = [NodeParse.createGetterVarDecl(declarationnode.name)];
+                    transpiler.closeupNode = [NodeParse.createDataSetter(declarationnode.name, NodeParse.createIdentifier(declarationnode.name))];
+                }
+            }
+
+        }
 
         if (node.primitive) {
             transpiler.transpiledNode = Aux.isExpStm(node.parsenode) ? node.parsenode : parent;
@@ -333,16 +508,22 @@ var Nodeify = (function () {
         }
         
         /* No entryNode found : can happen with library functions. 
-           Just return call in this case ( TODO !)*/
+           Just return call in this case */
         if (!entryNode) {
-            transpiler.transpiledNode = parent;
+            if (Aux.isExpStm(parent) && Aux.isCallExp(parent.expression)) {
+                parent = Aux.clone(parent);
+                transpiler.transpiledNode = parent;
+            }
+            else {
+                transpiler.transpiledNode = node.parsenode;
+            }
             return transpiler;
         }
         /* Perform cloud types transformations on arguments */
         if (entryNode.isServerNode()) {
             /* CASE 2 */
             if (node.isClientNode()) {
-                transpiled = transpiler.transformCPS.transformCall(transpiler, parent);
+                transpiled = transpiler.transformCPS.transformCall(transpiler, false, parent);
                 transpiler.nodes = transpiled[0];
                 transpiler.transpiledNode = transpiled[1].parsenode;
 
@@ -358,7 +539,7 @@ var Nodeify = (function () {
         else if (entryNode.isClientNode()) {
             /* CASE  4 : defined on client, called by client */
             if(node.isClientNode()) {
-                transpiled = transpiler.transformCPS.transformCall(node, transpiler.nodes, transformer, parent);
+                transpiled = transpiler.transformCPS.transformCall(transpiler, false, parent);
                 transpiler.nodes = transpiled[0];
                 transpiler.transpiledNode= transpiled[1].parsenode;
 
@@ -382,7 +563,7 @@ var Nodeify = (function () {
         /* Shared function */
         else if (entryNode.isSharedNode()) {
             if (node.parsenode.leadingComment && Comments.isBlockingAnnotated(node.parsenode.leadingComment)) {
-                transpiled = transformer.transformCPS.transformCall(node, transpiler.nodes, transformer, parent);
+                transpiled = transformer.transformCPS.transformCall(transpiler, false, parent);
                 transpiler.nodes = transpiled[0];
                 transpiler.transpiledNode = transpiled[1].parsenode;
             }
@@ -437,6 +618,9 @@ var Nodeify = (function () {
     /* Object Property */
     transformer.transformProperty = JSify.transformProperty;
 
+
+    /* Member expression */
+    transformer.transformMemberExpression = JSify.transformMemberExpression;
     
     function noTransformationDefined (transpiler) {
         transpiler.transpiledNode = false;
@@ -451,6 +635,7 @@ var Nodeify = (function () {
     transformer.transformActualParameter = noTransformationDefined;
     transformer.transformFormalParameter = noTransformationDefined;
     transformer.transformExitNode = noTransformation;
+
 
     /* Aux function: checks if two argument lists are the same */
     var argumentsEqual = function (args1, args2) {
@@ -485,9 +670,10 @@ var Nodeify = (function () {
         NodeParse = require('./Node_parse.js').NodeParse;
         CPSTransform = require('./CPS_transform.js').CPSTransform;
         exports.Nodeify  = transformer;
+        dtypeEquals = require('./../PDG/node.js').dtypeEquals;
     }
 
     return transformer;
 
 
-})()
+})();

@@ -157,11 +157,14 @@ var Aux = (function () {
         if (esp_isVarDecl(variableDecl)) 
           /* Variable Declaration */
           return variableDecl.declarations[0];
-
         else
           /* Variable Declarator */
           return variableDecl
+      }
 
+      function hasInitValue (variableDecl) {
+        var decl = getDeclaration(variableDecl);
+        return decl.init !== null;
       }
 
       //
@@ -232,6 +235,7 @@ var Aux = (function () {
           forEach(objectKeys(node), function(name) {
               // ignore auto generated
               if (name[0] === "$") return;
+              if (name[0] === "_") return;
 
               var value = node[name],
                   cvalue;
@@ -327,6 +331,7 @@ var Aux = (function () {
     toreturn.inTryStatement     = esp_inTryStatement;
     toreturn.hasCallStm         = esp_hasCallStm;
     toreturn.getDeclaration     = getDeclaration;
+    toreturn.hasInitValue       = hasInitValue;
 
     toreturn.clone              = clone;
 

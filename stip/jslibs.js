@@ -6,7 +6,7 @@ var js_libs = (function () {
 
     var readLibrary = function (lib) {
         return fs.readFileSync(path.join(__dirname, "jslibs/" + lib + ".placeholder.js"), "utf-8");
-    }
+    };
 
     var https   = readLibrary("https");
     var jQuery  = readLibrary("jquery");
@@ -14,8 +14,12 @@ var js_libs = (function () {
     var consolo = readLibrary("console");
     var windowo = readLibrary("window");
     var json    = readLibrary("json");
+    var fsLib   = readLibrary("fs");
+    var dns     = readLibrary("dns");
+    var proxy   = readLibrary("proxy");
+    var date    = readLibrary("date");
 
-    var libs = [https, consolo, jQuery, math, windowo, json];
+    var libs = [https, consolo, jQuery, math, windowo, json, fsLib, dns, proxy, date];
 
     return  { 
         getLibraries : function () {
