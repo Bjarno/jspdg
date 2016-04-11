@@ -128,7 +128,7 @@ var Reactify = (function () {
 
                     // And they share the same declaration node: create call to update GUI
                     if (declNode1 == declNode2) {
-                        var updateGUICall = createUpdateGuiCall(crumb.id, varname);
+                        var updateGUICall = createUpdateGuiCall(crumb.idName, varname);
                         updateGUICalls.push(updateGUICall);
                     }
                 }
