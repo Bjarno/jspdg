@@ -2,6 +2,8 @@
  *               TRANSFORMATIONS FOR REDSTONE                   *
  ****************************************************************/
 
+var esprima = require("esprima");
+
 var Reactify = (function () {
 
     // The context Reactify should work on
@@ -99,44 +101,38 @@ var Reactify = (function () {
         transpiler = Nodeify.transformAssignmentExp(transpiler);
 
         var node      = transpiler.node;
-            parsenode = node.parsenode,
-            left      = parsenode.expression.left,
-            varname   = left.name;
+        var parsenode = node.parsenode;
+        var left      = parsenode.expression.left;
 
-        if (varname === undefined) {
+        // Doing nothing if left: only static analysis if while object changes
+        if (left.type !== esprima.Syntax.Identifier) {
             return transpiler;
         }
 
+        var varname = left.name;
+
         // Check if varname is in the list of reactive variables
         // And if they have the same declaration node
-
         var genast = context.stip.generatedAST;
 
         // Create array to temporary store all calls to update the GUI
         var updateGUICalls = [];
 
         context.crumbs.forEach(function(crumb) {
-            var on_update = crumb.on_update;
-            var type = on_update.type;
-            var varnameCrumb = on_update.varname;
-            var declNode2 = on_update.graph.declarationNode;
+            // For all variables in this crumb
+            crumb.variableNames.forEach(function (varnameCrumb) {
+                // If they have the same name
+                if (varname == varnameCrumb) {
+                    var declNode1 = Pdg.declarationOf(left, genast);
+                    var declNode2 = context.varname2declNode[varnameCrumb];
 
-            // If this variable name is the same as the variable name in the crumb
-            if (varname == varnameCrumb) {
-                switch (type) {
-                    case 'Identifier':
-                    case 'MemberExpression':
-                        var declNode1 = Pdg.declarationOf(left, genast);
-                        var sameDeclNode = (declNode1 == declNode2);
-
-                        // And they share the same declaration node: create call to update GUI
-                        if (sameDeclNode) {
-                            var updateGUICall = createUpdateGuiCall(crumb.id, varname);
-                            updateGUICalls.push(updateGUICall);
-                        }
-                        break;
+                    // And they share the same declaration node: create call to update GUI
+                    if (declNode1 == declNode2) {
+                        var updateGUICall = createUpdateGuiCall(crumb.id, varname);
+                        updateGUICalls.push(updateGUICall);
+                    }
                 }
-            }    
+            });
         });
 
         // Only do something if there is at least one call to update the GUI 
