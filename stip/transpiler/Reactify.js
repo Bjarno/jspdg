@@ -109,43 +109,40 @@ var Reactify = (function () {
             return transpiler;
         }
 
-        var varname = left.name;
+        var variableName = left.name;
 
         // Check if varname is in the list of reactive variables
         // And if they have the same declaration node
         var genast = context.stip.generatedAST;
 
         // Create array to temporary store all calls to update the GUI
-        var updateGUICalls = [];
+        var updateGUI = false;
 
         context.crumbs.forEach(function(crumb) {
             // For all variables in this crumb
             crumb.variableNames.forEach(function (varnameCrumb) {
                 // If they have the same name
-                if (varname == varnameCrumb) {
+                if (variableName == varnameCrumb) {
                     var declNode1 = Pdg.declarationOf(left, genast);
                     var declNode2 = context.varname2declNode[varnameCrumb];
 
                     // And they share the same declaration node: create call to update GUI
                     if (declNode1 == declNode2) {
-                        var updateGUICall = createUpdateGuiCall(varname);
-                        updateGUICalls.push(updateGUICall);
+                        updateGUI = true;
                     }
                 }
             });
         });
 
         // Only do something if there is at least one call to update the GUI 
-        if (updateGUICalls.length >= 1) {
+        if (updateGUI) {
             // Create new empty lambda call, and add the original assignment node
             var oldparsenode = parsenode;
             var lambda = createEmptyLambdaCall();
             lambda.addToBody(oldparsenode);
 
             // Add all calls to update the GUI too
-            updateGUICalls.forEach(function(call) {
-                lambda.addToBody(call);
-            });
+            lambda.addToBody(createUpdateGuiCall(variableName));
 
             // Output the result
             transpiler.transpiledNode = lambda.node;
@@ -155,7 +152,6 @@ var Reactify = (function () {
     };
 
     transformer.transformAssignmentExp = onAssignment;
-
 
     if (typeof module !== 'undefined' && module.exports != null) {
         exports.Reactify  = transformer;
