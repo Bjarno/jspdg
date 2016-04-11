@@ -72,7 +72,7 @@ var Reactify = (function () {
     /**
      * Create a call to update the GUI, given the idName of the crumb and the name of the variable containing the current value.
      */
-    var createUpdateGuiCall = function(idname, object) {
+    var createUpdateGuiCall = function(varname) {
         return {
             "type": "ExpressionStatement",
             "expression": {
@@ -84,12 +84,12 @@ var Reactify = (function () {
                 "arguments": [
                     {
                         "type": "Literal",
-                        "value": idname,
-                        "raw": "\"" + idname + "\""
+                        "value": varname,
+                        "raw": "\"" + varname + "\""
                     },
                     {
                         "type": "Identifier",
-                        "name": object
+                        "name": varname
                     }
                 ]
             }
@@ -128,7 +128,7 @@ var Reactify = (function () {
 
                     // And they share the same declaration node: create call to update GUI
                     if (declNode1 == declNode2) {
-                        var updateGUICall = createUpdateGuiCall(crumb.idName, varname);
+                        var updateGUICall = createUpdateGuiCall(varname);
                         updateGUICalls.push(updateGUICall);
                     }
                 }
