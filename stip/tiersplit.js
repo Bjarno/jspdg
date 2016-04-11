@@ -32,11 +32,10 @@ function tiersplit (src, context) {
     // Generate list of all identifiers that should be generated
     var toGenerateCallbacks = context.callbacks;
     var toGenerateIdentifiers = [];
-    context.crumbs.forEach(function (dynamic) {
-        var on_update = dynamic.on_update;
-        var type = on_update.type;
-        var varname = on_update.varname;
-        toGenerateIdentifiers.push(varname);
+    context.crumbs.forEach(function (crumb) {
+        crumb.variableNames.forEach(function (varname) {
+            toGenerateIdentifiers.push(varname);
+        });
     });
 
     // Join them in one object
@@ -60,14 +59,10 @@ function tiersplit (src, context) {
     };
 
     // Find declaration nodes for the reactive variables
-    context.crumbs.forEach(function (dynamic) {
-        var on_update = dynamic.on_update;
-        var type = on_update.type;
-        var varname = on_update.varname;
-        var declNode = Pdg.declarationOf(generatedIdentifiers[varname].expression, genast);
-        on_update.graph = {
-            declarationNode: declNode
-        };
+    context.crumbs.forEach(function (crumb) {
+        crumb.variableNames.forEach(function (varname) {
+            context.varname2declNode[varname] = Pdg.declarationOf(generatedIdentifiers[varname].expression, genast);
+        });
     });
 
     // Pass context to Reactify transpiler before starting Stip, so it has access to the crumbs
