@@ -79,7 +79,7 @@ var Reactify = (function () {
                 "type": "CallExpression",
                 "callee": {
                     "type": "Identifier",
-                    "name": "RUpdateGUI"
+                    "name": "_RUpdateGUI"
                 },
                 "arguments": [
                     {
