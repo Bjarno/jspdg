@@ -32,6 +32,7 @@ function tiersplit (src, context) {
     // Generate list of all identifiers that should be generated
     var toGenerateCallbacks = context.callbacks;
     var toGenerateIdentifiers = [];
+    var toGenerateMethods = context.functionNames;
     context.crumbs.forEach(function (crumb) {
         crumb.variableNames.forEach(function (varname) {
             toGenerateIdentifiers.push(varname);
@@ -40,7 +41,7 @@ function tiersplit (src, context) {
 
     // Join them in one object
     var toGenerate = {
-        callbacks: toGenerateCallbacks,
+        methodCalls: toGenerateCallbacks.concat(toGenerateMethods),
         identifiers: toGenerateIdentifiers
     };
 

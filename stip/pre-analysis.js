@@ -259,7 +259,7 @@ var pre_analyse = function (ast, toGenerate) {
 
     function generateCallbackCalls() {
         var calls = [];
-        toGenerate.callbacks.forEach(function (cb) {
+        toGenerate.methodCalls.forEach(function (cb) {
             var call = createCall(cb);
             var func = fundefsC[cb];
 
