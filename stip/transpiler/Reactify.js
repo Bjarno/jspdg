@@ -78,8 +78,16 @@ var Reactify = (function () {
             "expression": {
                 "type": "CallExpression",
                 "callee": {
-                    "type": "Identifier",
-                    "name": "_RUpdateGUI"
+                    "type": "MemberExpression",
+                    "computed": false,
+                    "object": {
+                        "type": "Identifier",
+                        "name": "REDSTONE"
+                    },
+                    "property": {
+                        "type": "Identifier",
+                        "name": "updateVariable"
+                    }
                 },
                 "arguments": [
                     {
