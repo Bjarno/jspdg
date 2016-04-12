@@ -259,9 +259,9 @@ var pre_analyse = function (ast, toGenerate) {
 
     function generateCallbackCalls() {
         var calls = [];
-        toGenerate.methodCalls.forEach(function (cb) {
-            var call = createCall(cb);
-            var func = fundefsC[cb];
+        toGenerate.methodCalls.forEach(function (methodName) {
+            var call = createCall(methodName);
+            var func = fundefsC[methodName];
 
             call.leadingComment = {type: "Block", value:"@generated", range: [0,16]};
             call.clientCalls = 1;
