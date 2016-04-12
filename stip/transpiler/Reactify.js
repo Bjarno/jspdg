@@ -118,21 +118,30 @@ var Reactify = (function () {
         // Create array to temporary store all calls to update the GUI
         var updateGUI = false;
 
-        context.crumbs.forEach(function(crumb) {
-            // For all variables in this crumb
-            crumb.variableNames.forEach(function (varnameCrumb) {
-                // If they have the same name
-                if (variableName == varnameCrumb) {
-                    var declNode1 = Pdg.declarationOf(left, genast);
-                    var declNode2 = context.varname2declNode[varnameCrumb];
+        // Dirty workaround to break free from forEach without using .every()
+        var BreakException= {};
+        try {
+            context.crumbs.forEach(function (crumb) {
+                // For all variables in this crumb
+                crumb.variableNames.forEach(function (varnameCrumb) {
+                    // If they have the same name
+                    if (variableName == varnameCrumb) {
+                        var declNode1 = Pdg.declarationOf(left, genast);
+                        var declNode2 = context.varname2declNode[varnameCrumb];
 
-                    // And they share the same declaration node: create call to update GUI
-                    if (declNode1 == declNode2) {
-                        updateGUI = true;
+                        // And they share the same declaration node: create call to update GUI
+                        if (declNode1 == declNode2) {
+                            updateGUI = true;
+                            throw BreakException;
+                        }
                     }
-                }
+                });
             });
-        });
+        } catch (e) {
+            if (e !== BreakException) {
+                throw e;
+            }
+        }
 
         // Only do something if there is at least one call to update the GUI 
         if (updateGUI) {
