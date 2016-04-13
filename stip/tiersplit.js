@@ -67,9 +67,11 @@ function tiersplit (src, context) {
     });
 
     // Pass context to Reactify transpiler before starting Stip, so it has access to the crumbs
+    // Pass context to Node_parse for proper setup of server/client
     // !!! Node.js only !!!
     require("./transpiler/Reactify.js").setContext(context);
-
+    require("./transpiler/Node_parse.js").setContext(context);
+    
     // Start Stip
     Stip.start(graphs);
 

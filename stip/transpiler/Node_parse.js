@@ -6,6 +6,12 @@
 
 var NodeParse = (function () {
 
+    var context = {};
+
+    var setContext = function setContext(newcontext) {
+        context = newcontext;
+    };
+
     var toreturn = {};
 
 
@@ -438,11 +444,14 @@ var NodeParse = (function () {
     }
 
     var createServer = function () {
-        return esprima.parse('var ServerRpc = require("rpc");\nvar server = new ServerRpc()').body;
+        var port = context.options.server_port;
+        return esprima.parse('var ServerRpc = require("rpc");\nvar server = new ServerRpc(undefined, ' + port + ')').body;
     };
 
     var createClient = function () {
-        return esprima.parse("var client = new ClientRpc('http://127.0.0.1:3000');").body;
+        var host = context.options.server_hostname;
+        var port = context.options.server_port;
+        return esprima.parse("var client = new ClientRpc('http://" + host + ":" + port + "');").body;
     };
 
     var methodsServer = function () {
@@ -477,8 +486,9 @@ var NodeParse = (function () {
     toreturn.createStoreServer  = createStoreServer;
 
     if (typeof module !== 'undefined' && module.exports != null) {
-        esprima         = require('../lib/esprima.js');
-        exports.NodeParse = toreturn;
+        esprima            = require('../lib/esprima.js');
+        exports.NodeParse  = toreturn;
+        exports.setContext = setContext;
     }
 
     return toreturn;
