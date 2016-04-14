@@ -133,6 +133,9 @@ var Nodeify = (function () {
                 transpiled.method = false;
                 transpiler.nodes = transpiled.nodes.remove(entry);
             }
+            if (node.parsenode.declarations === undefined) {
+                node.parsenode.declarations = {};
+            }
             node.parsenode.declarations.init = transpiler.parsednode;
             transpiler.nodes = transpiled.nodes;
             
