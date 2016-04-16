@@ -39,6 +39,14 @@ function tiersplit (src, context) {
         });
     });
 
+    // Also generate identifiers for ui->client variables
+    var exposedValues = context.exposedValues;
+    for (var fieldname in exposedValues) {
+        if (exposedValues.hasOwnProperty(fieldname)) {
+            toGenerateIdentifiers.push(fieldname);
+        }
+    }
+
     // Join them in one object
     var toGenerate = {
         methodCalls: toGenerateCallbacks.concat(toGenerateMethods),
@@ -65,6 +73,14 @@ function tiersplit (src, context) {
             context.varname2declNode[varname] = Pdg.declarationOf(generatedIdentifiers[varname].expression, genast);
         });
     });
+
+    for (var varname in exposedValues) {
+        if (exposedValues.hasOwnProperty(varname)) {
+            if (!(varname in context.varname2declNode)) {
+                context.varname2declNode[varname] = Pdg.declarationOf(generatedIdentifiers[varname].expression, genast);
+            }
+        }
+    }
 
     // Pass context to Reactify transpiler before starting Stip, so it has access to the crumbs
     // Pass context to Node_parse for proper setup of server/client

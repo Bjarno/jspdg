@@ -8,7 +8,7 @@ var js_libs = (function () {
         return fs.readFileSync(path.join(__dirname, "jslibs-stubs/" + lib + ".stubs.js"), "utf-8");
     };
 
-    var libs = ["https", "jquery", "math", "console", "window", "json", "fs", "dns", "proxy", "data", "redstone"];
+    var libs = ["https", "jquery", "math", "console", "window", "json", "fs", "dns", "proxy", "date", "redstone"];
 
     libs = libs.map(function (libname) {
         return readLibrary(libname);

@@ -145,6 +145,20 @@ var Reactify = (function () {
                     }
                 });
             });
+
+            // Check also for exposed variables/values
+            var exposedValues = context.exposedValues;
+            for (var varname in exposedValues) {
+                if (exposedValues.hasOwnProperty(varname)) {
+                    if (variableName == varname) {
+                        var declNode1 = Pdg.declarationOf(left, genast);
+                        var declNode2 = context.varname2declNode[varname];
+                        if (declNode1 == declNode2) {
+                            updateGUI = true;
+                        }
+                    }
+                }
+            }
         } catch (e) {
             if (e !== BreakException) {
                 throw e;

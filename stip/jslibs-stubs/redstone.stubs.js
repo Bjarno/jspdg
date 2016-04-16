@@ -1,5 +1,5 @@
 var REDSTONE = {
-	getFromUI: function (idname) {
-		return idname;
+	updateFromUI: function () {
+		return null;
 	}
 };
