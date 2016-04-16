@@ -5,21 +5,14 @@ var path = require("path");
 var js_libs = (function () {
 
     var readLibrary = function (lib) {
-        return fs.readFileSync(path.join(__dirname, "jslibs/" + lib + ".placeholder.js"), "utf-8");
+        return fs.readFileSync(path.join(__dirname, "jslibs-stubs/" + lib + ".stubs.js"), "utf-8");
     };
 
-    var https   = readLibrary("https");
-    var jQuery  = readLibrary("jquery");
-    var math    = readLibrary("math");
-    var consolo = readLibrary("console");
-    var windowo = readLibrary("window");
-    var json    = readLibrary("json");
-    var fsLib   = readLibrary("fs");
-    var dns     = readLibrary("dns");
-    var proxy   = readLibrary("proxy");
-    var date    = readLibrary("date");
+    var libs = ["https", "jquery", "math", "console", "window", "json", "fs", "dns", "proxy", "data", "redstone"];
 
-    var libs = [https, consolo, jQuery, math, windowo, json, fsLib, dns, proxy, date];
+    libs = libs.map(function (libname) {
+        return readLibrary(libname);
+    });
 
     return  { 
         getLibraries : function () {
