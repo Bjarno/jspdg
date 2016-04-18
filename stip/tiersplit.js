@@ -24,11 +24,14 @@ var Pdg             = require('./../jipda-pdg/pdg/pdg.js').Pdg;
 var Transpiler       = require('./transpiler/slice.js').CodeGenerator;
 
 function tiersplit (src, context) {
+    console.log("Hoisting...");
     var ast = Ast.createAst(src, {loc: true, owningComments: true, comment: true});
     ast = Hoist.hoist(ast, function (node) {
         return Aux.isBlockStm(node) && Comments.isTierAnnotated(node)
     });
 
+    console.log("Creating list of identifiers/function calls to generate...");
+    
     // Generate list of all identifiers that should be generated
     var toGenerateCallbacks = context.callbacks;
     var toGenerateIdentifiers = [];
@@ -59,8 +62,11 @@ function tiersplit (src, context) {
         identifiers: uniq(toGenerateIdentifiers)
     };
 
+    console.log("Generating extra...");
     require("./../../utils").dump(toGenerate);
 
+    console.log("Running pre-analyisis...");
+    
     // Run pre-analysis
     var pre_analysis         = pre_analyse(ast, toGenerate),
         genast               = pre_analysis.ast,
@@ -74,6 +80,8 @@ function tiersplit (src, context) {
     context.stip = {
         generatedAST: genast
     };
+    
+    console.log("Finding declaration nodes for generated identifiers/callbacks...");
 
     // Find declaration nodes for the reactive variables
     for (var varname in generatedIdentifiers) {
@@ -87,6 +95,8 @@ function tiersplit (src, context) {
     // !!! Node.js only !!!
     require("./transpiler/Reactify.js").setContext(context);
     require("./transpiler/Node_parse.js").setContext(context);
+    
+    console.log("Running Stip.start()");
     
     // Start Stip
     Stip.start(graphs);
