@@ -104,6 +104,11 @@ var Reactify = (function () {
         };
     };
 
+    // Aid function, so the list with identifiers are unique
+    var uniq = function uniq(a) {
+        return Array.from(new Set(a));
+    };
+
     // Change what happens on an assignment
     var onAssignment = function onAssignment(transpiler) {
         transpiler = Nodeify.transformAssignmentExp(transpiler);
@@ -117,7 +122,7 @@ var Reactify = (function () {
             return transpiler;
         }
 
-        var variableName = left.name;
+        var variableNameAssignment = left.name;
 
         // Check if varname is in the list of reactive variables
         // And if they have the same declaration node
@@ -128,37 +133,32 @@ var Reactify = (function () {
 
         // Dirty workaround to break free from forEach without using .every()
         var BreakException= {};
-        try {
-            context.crumbs.forEach(function (crumb) {
-                // For all variables in this crumb
-                crumb.variableNames.forEach(function (varnameCrumb) {
-                    // If they have the same name
-                    if (variableName == varnameCrumb) {
-                        var declNode1 = Pdg.declarationOf(left, genast);
-                        var declNode2 = context.varname2declNode[varnameCrumb];
 
-                        // And they share the same declaration node: create call to update GUI
-                        if (declNode1 == declNode2) {
-                            updateGUI = true;
-                            throw BreakException;
-                        }
-                    }
-                });
+        try {
+            var variableNames = [];
+            context.crumbs.forEach(function (crumb) {
+                variableNames = variableNames.concat(crumb.variableNames);
+            });
+            context.exposedValues.forEach(function (exposedValue) {
+                variableNames = variableNames.concat(exposedValue.variableNames);
             });
 
-            // Check also for exposed variables/values
-            var exposedValues = context.exposedValues;
-            for (var varname in exposedValues) {
-                if (exposedValues.hasOwnProperty(varname)) {
-                    if (variableName == varname) {
-                        var declNode1 = Pdg.declarationOf(left, genast);
-                        var declNode2 = context.varname2declNode[varname];
-                        if (declNode1 == declNode2) {
-                            updateGUI = true;
-                        }
+            variableNames = uniq(variableNames);
+
+            // For all variables in this crumb
+            variableNames.forEach(function (varname) {
+                // If they have the same name
+                if (variableNameAssignment == varname) {
+                    var declNode1 = Pdg.declarationOf(left, genast);
+                    var declNode2 = context.varname2declNode[varname];
+
+                    // And they share the same declaration node: create call to update GUI
+                    if (declNode1 == declNode2) {
+                        updateGUI = true;
+                        throw BreakException;
                     }
                 }
-            }
+            });
         } catch (e) {
             if (e !== BreakException) {
                 throw e;
@@ -173,7 +173,7 @@ var Reactify = (function () {
             lambda.addToBody(oldparsenode);
 
             // Add all calls to update the GUI too
-            lambda.addToBody(createUpdateGuiCall(variableName));
+            lambda.addToBody(createUpdateGuiCall(variableNameAssignment));
 
             // Output the result
             transpiler.transpiledNode = lambda.node;

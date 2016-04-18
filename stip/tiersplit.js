@@ -33,25 +33,33 @@ function tiersplit (src, context) {
     var toGenerateCallbacks = context.callbacks;
     var toGenerateIdentifiers = [];
     var toGenerateMethods = context.functionNames;
+
+    // Add identifiers from crumbs
     context.crumbs.forEach(function (crumb) {
         crumb.variableNames.forEach(function (varname) {
             toGenerateIdentifiers.push(varname);
         });
     });
 
-    // Also generate identifiers for ui->client variables
-    var exposedValues = context.exposedValues;
-    for (var fieldname in exposedValues) {
-        if (exposedValues.hasOwnProperty(fieldname)) {
-            toGenerateIdentifiers.push(fieldname);
-        }
-    }
+    // Also add identifiers for two-way variables, defined as an exposed value
+    context.exposedValues.forEach(function (exposedValue) {
+        exposedValue.variableNames.forEach(function (varname) {
+            toGenerateIdentifiers.push(varname);
+        });
+    });
+
+    // Aid function, so the list with identifiers are unique
+    var uniq = function uniq(a) {
+        return Array.from(new Set(a));
+    };
 
     // Join them in one object
     var toGenerate = {
-        methodCalls: toGenerateCallbacks.concat(toGenerateMethods),
-        identifiers: toGenerateIdentifiers
+        methodCalls: uniq(toGenerateCallbacks.concat(toGenerateMethods)),
+        identifiers: uniq(toGenerateIdentifiers)
     };
+
+    require("./../../utils").dump(toGenerate);
 
     // Run pre-analysis
     var pre_analysis         = pre_analyse(ast, toGenerate),
@@ -68,17 +76,9 @@ function tiersplit (src, context) {
     };
 
     // Find declaration nodes for the reactive variables
-    context.crumbs.forEach(function (crumb) {
-        crumb.variableNames.forEach(function (varname) {
+    for (var varname in generatedIdentifiers) {
+        if (generatedIdentifiers.hasOwnProperty(varname)) {
             context.varname2declNode[varname] = Pdg.declarationOf(generatedIdentifiers[varname].expression, genast);
-        });
-    });
-
-    for (var varname in exposedValues) {
-        if (exposedValues.hasOwnProperty(varname)) {
-            if (!(varname in context.varname2declNode)) {
-                context.varname2declNode[varname] = Pdg.declarationOf(generatedIdentifiers[varname].expression, genast);
-            }
         }
     }
 
