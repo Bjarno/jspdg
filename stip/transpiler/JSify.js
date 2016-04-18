@@ -131,7 +131,6 @@ var JSify = (function () {
                 Aux.isAssignmentExp(parsenode.expression)) {
                 parsenode.expression.right = transpiledNode;
             }
-            
         }
         /* Has call nodes in value / right hand side? */
         if (call.length > 0) {
@@ -348,7 +347,7 @@ var JSify = (function () {
 
         if (transpiler.options.cps) {
             
-            transformed = CPSTransform.transformCall(transpiler, false, parent);
+            transformed = CPSTransform.transformCall(transpiler, false, (Aux.isExpStm(parsenode) && Aux.isCallExp(parsenode.expression)) ? parsenode : parent);
             transpiler.nodes = transformed[0];
             
 
@@ -547,23 +546,31 @@ var JSify = (function () {
 
     function transformNewExp (transpiler) {
         var node        = transpiler.node,
-            upnode      = node.getInNodes(EDGES.DATA)[0],
+            upnode      = node.getInNodes(EDGES.DATA).concat(node.getInNodes(EDGES.CONTROL).filter(function (n) {return n.isActualPNode}))[0],
             call        = upnode.getOutNodes(EDGES.CONTROL)
-                            .filter(function (n) {return n.isCallNode; })[0],
+                            .filter(function (n) {return n.isCallNode && n.parsenode.equals(node.parsenode) })[0],
             parsenode   = node.parsenode,
             actual_ins  = call.getActualIn(),
             actual_outs = call.getActualOut();
 
         transpiler.nodes = transpiler.nodes.remove(call);
+
         actual_outs.map(function (a_out) {
             if (nodesContains(transpiler.nodes, a_out)) {
                 transpiler.nodes = transpiler.nodes.remove(a_out);
             }
         });
 
+        actual_ins.map(function (a_in) {
+            a_in.getOutNodes(EDGES.CONTROL)
+                .map(function (n) {
+                    transpiler.nodes = transpiler.nodes.remove(n);
+                });   
+        });
+
         parsenode.arguments = actual_ins.filter(function (a_in) {
             return nodesContains(transpiler.nodes, a_in);
-        }).map(function (a_in) { return a_in.parsenode; });
+        }).map(function (a_in) { transpiler.nodes = transpiler.nodes.remove(a_in); return a_in.parsenode; });
 
         transpiler.nodes = transpiler.nodes.remove(node);
         transpiler.transpiledNode = parsenode;
