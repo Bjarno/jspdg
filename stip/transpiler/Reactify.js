@@ -139,9 +139,6 @@ var Reactify = (function () {
             context.crumbs.forEach(function (crumb) {
                 variableNames = variableNames.concat(crumb.variableNames);
             });
-            context.exposedValues.forEach(function (exposedValue) {
-                variableNames = variableNames.concat(exposedValue.variableNames);
-            });
 
             variableNames = uniq(variableNames);
 

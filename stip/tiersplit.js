@@ -44,13 +44,6 @@ function tiersplit (src, context) {
         });
     });
 
-    // Also add identifiers for two-way variables, defined as an exposed value
-    context.exposedValues.forEach(function (exposedValue) {
-        exposedValue.variableNames.forEach(function (varname) {
-            toGenerateIdentifiers.push(varname);
-        });
-    });
-
     // Aid function, so the list with identifiers are unique
     var uniq = function uniq(a) {
         return Array.from(new Set(a));
