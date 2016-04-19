@@ -33,9 +33,14 @@ function tiersplit (src, context) {
     console.log("Creating list of identifiers/function calls to generate...");
     
     // Generate list of all identifiers that should be generated
-    var toGenerateCallbacks = context.callbacks;
+    var toGenerateCallbacks = [];
     var toGenerateIdentifiers = [];
     var toGenerateMethods = context.functionNames;
+
+    // Add callbacks from callbacks
+    context.callbacks.forEach(function (callback) {
+        toGenerateCallbacks.push(callback.name);
+    });
 
     // Add identifiers from crumbs
     context.crumbs.forEach(function (crumb) {
