@@ -38,6 +38,7 @@ var CodeGenerator = (function () {
         var addSetUp = function (option, transpiled) {
             switch (option.target) {
                 case 'node.js':
+<<<<<<< HEAD
                 case 'redstone':
                     if(option.tier === 'client') {
                         var client = NodeParse.createClient();
@@ -50,6 +51,12 @@ var CodeGenerator = (function () {
                             transpiled.setup.push(a);
                         });
                     }
+=======
+                    if(option.tier === 'client')
+                        transpiled.setup = transpiled.setup.concat(NodeParse.createClient());
+                    else
+                        transpiled.setup = transpiled.setup.concat(NodeParse.createServer());
+>>>>>>> upstream/master
             }
             return transpiled;
         }
@@ -60,10 +67,16 @@ var CodeGenerator = (function () {
         var transformBody = function (option, transpiled, body, methods) {
             switch (option.target) {
                 case 'node.js':
+<<<<<<< HEAD
                 case 'redstone':
+=======
+                    var methodsDecl;
+                    var methodsProp;
+>>>>>>> upstream/master
                     if (option.tier === 'client') {
-                        var methodsDecl = NodeParse.methodsClient();
-                        methodsDecl.expression.arguments[0].properties = methods;
+                        methodsDecl = NodeParse.methodsClient();
+                        methodsProp = methodsDecl.expression.arguments[0].properties
+                        methodsDecl.expression.arguments[0].properties = methodsProp.concat(methods);
                         /* Add cloud types declarations */
                         for(var name in  transpiled.cloudtypes) {
                             if(transpiled.cloudtypes.hasOwnProperty(name)) {
@@ -76,8 +89,9 @@ var CodeGenerator = (function () {
                     }
                     else {
                         /* server rpcs + cloudtypes are added */
-                        var methodsDecl = NodeParse.methodsServer();
-                        methodsDecl.expression.arguments[0].properties = methods;
+                        methodsDecl = NodeParse.methodsServer();
+                        methodsProp = methodsDecl.expression.arguments[0].properties;
+                        methodsDecl.expression.arguments[0].properties = methodsProp.concat(methods);
 
                         /* Declare cloud types + add their declarations as well (for use on server side as well) */
                         for(var name in transpiled.cloudtypes) {

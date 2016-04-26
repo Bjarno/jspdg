@@ -426,24 +426,10 @@ var NodeParse = (function () {
         }
     }
 
-    var createStore = function () {
-        return [esprima.parse('var store = new Store();').body[0]]
-    }
 
-    var createStoreClient = function () {
-        return createStore().concat([
-            esprima.parse('store.localStore(localStorage);').body[0],
-            esprima.parse('store.connectClient(client);').body[0]
-            ])
-    }
-
-    var createStoreServer = function () {
-        return createStore().concat([
-            esprima.parse('store.connectServer(server);').body[0]
-            ]);
-    }
 
     var createServer = function () {
+<<<<<<< HEAD
         var port = context.options.server_port;
         return esprima.parse('var ServerRpc = require("rpc");\nvar server = new ServerRpc(undefined, ' + port + ')').body;
     };
@@ -452,14 +438,21 @@ var NodeParse = (function () {
         var host = context.options.server_hostname;
         var port = context.options.server_port;
         return esprima.parse("var client = new ClientRpc('http://" + host + ":" + port + "');").body;
+=======
+        return esprima.parse('var server = new ServerRpc(serverHttp, {}); var store = new Store(); store.connectServer(server);').body;
+    };
+
+    var createClient = function () {
+        return esprima.parse("var client = new ClientRpc('http://127.0.0.1:8080');var store = new Store(); store.localStore(localStorage, 'app', true); store.connectClient(client);").body;
+>>>>>>> upstream/master
     };
 
     var methodsServer = function () {
-        return esprima.parse('server.expose({})').body[0]; 
+        return esprima.parse("server.expose({'updateStore' : function (key, val, cb) {store.set(key, val, false)}, 'retrieveStore' : function (key, val, cb) {var id = this.id; store.loop(function (key, value) {server.rpcTo(id, 'updateStore', key ,value)}); return cb(null, store.data)}})").body[0]; 
     };
 
     var methodsClient = function () {
-        return esprima.parse('client.expose({})').body[0];
+        return esprima.parse("client.expose({'updateStore' : function (key, val, cb) {store.set(key, val, true)}})").body[0];
     };
 
 
@@ -482,8 +475,7 @@ var NodeParse = (function () {
     toreturn.createDataSetter   = createDataSetter;
     toreturn.createDataGetter   = createDataGetter;
     toreturn.createGetterVarDecl = createGetterVarDecl;
-    toreturn.createStoreClient  = createStoreClient;
-    toreturn.createStoreServer  = createStoreServer;
+
 
     if (typeof module !== 'undefined' && module.exports != null) {
         esprima            = require('../lib/esprima.js');

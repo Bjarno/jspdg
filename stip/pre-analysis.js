@@ -9,6 +9,7 @@ var pre_analyse = function (ast, toGenerate) {
     var asyncs      = ["https", "dns", "fs", "proxy"];
     var anonfC      = [];
     var anonfS      = [];
+    var arrayprims  = ["filter", "count", "push", "search", "length", "map", "append", "concat", "forEach", "slice", "find", "sort"];
     var anonfSh     = [];
     var decl        = [];
     var callS       = [];
@@ -414,12 +415,13 @@ var pre_analyse = function (ast, toGenerate) {
                                    Call it with an object literal that has those properties */
                                 Aux.walkAst(func.body, {
                                     pre: function (node) {
+                                        var parent = Ast.parent(node, ast);
                                         if (Aux.isCallExp(node) && Aux.isMemberExpression(node.callee) &&
                                             Aux.isIdentifier(node.callee.object) && param.name == node.callee.object.name) {
                                             objectarg.addProperty(node.callee.property, createFunExp([], false));
                                         }
                                         else if (Aux.isMemberExpression(node) && Aux.isIdentifier(node.property) &&
-                                            !(Aux.isCallExp(Ast.parent(node, ast)))) {
+                                            !(Aux.isCallExp(parent) && parent.callee.equals(node))) {
                                             objectarg.addProperty(node.property, {type: "Literal",value: null});
                                         }
                                     }
