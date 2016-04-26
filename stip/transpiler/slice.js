@@ -5,6 +5,7 @@ var CodeGenerator = (function () {
     var toCode = function (option, nodes, node, ast) {
         switch (option.target) {
             case 'normal':
+            case 'redstone':
                 return Transpiler.transpile(Transpiler.createTranspileObject(node, nodes, ast, option, JSify, [], []));
             //return Meteorify.transpile(slicednodes, node, ast)
             case 'node.js':
@@ -15,6 +16,7 @@ var CodeGenerator = (function () {
     var addPrimitives = function (option) {
         switch (option) {
             case 'normal':
+            case 'redstone':
                 // TODO'
                 return [];
             case 'meteor':
