@@ -5,11 +5,12 @@ var CodeGenerator = (function () {
     var toCode = function (option, nodes, node, ast) {
         switch (option.target) {
             case 'normal':
-            case 'redstone':
                 return Transpiler.transpile(Transpiler.createTranspileObject(node, nodes, ast, option, JSify, [], []));
             //return Meteorify.transpile(slicednodes, node, ast)
             case 'node.js':
                 return Transpiler.transpile(Transpiler.createTranspileObject(node, nodes, ast, option, Nodeify, [], []));
+            case 'redstone':
+                return Transpiler.transpile(Transpiler.createTranspileObject(node, nodes, ast, option, Reactify, [], []));
         }
     }
 
@@ -179,6 +180,7 @@ var CodeGenerator = (function () {
         Nodeify = require('./Nodeify.js').Nodeify;
         JSify   = require('./JSify.js').JSify;
         Transpiler = require('./transpiler.js').Transpiler;
+        Reactify = require('./Reactify.js').Reactify;
         exports.CodeGenerator = toreturn;
     }
 

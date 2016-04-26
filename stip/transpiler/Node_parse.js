@@ -431,6 +431,7 @@ var NodeParse = (function () {
 
         return esprima.parse(
             'var ServerRpc = require("rpc");\n' +
+            'var Store = require("./node_modules/rpc/lib/store.js");\n' + // Dirty, but it works
             'var server = new ServerRpc(undefined, ' + port + ');\n' +
             'var store = new Store();\n' +
             'store.connectServer(server);'
