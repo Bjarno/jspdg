@@ -4,8 +4,13 @@
 
 var NodeParse = (function () {
 
-    var toreturn = {};
+    var context = {};
 
+    var setContext = function setContext(newcontext) {
+        context = newcontext;
+    };
+
+    var toreturn = {};
 
     var createVarDecl = function (declarator) {
         return {
@@ -422,11 +427,26 @@ var NodeParse = (function () {
 
 
     var createServer = function () {
-        return esprima.parse('var server = new ServerRpc(serverHttp, {}); var store = new Store(); store.connectServer(server);').body;
+        var port = context.options.server_port;
+
+        return esprima.parse(
+            'var ServerRpc = require("rpc");\n' +
+            'var server = new ServerRpc(undefined, ' + port + ');\n' +
+            'var store = new Store();\n' +
+            'store.connectServer(server);'
+        ).body;
     };
 
     var createClient = function () {
-        return esprima.parse("var client = new ClientRpc('http://127.0.0.1:8080');var store = new Store(); store.localStore(localStorage, 'app', true); store.connectClient(client);").body;
+        var host = context.options.server_hostname;
+        var port = context.options.server_port;
+
+        return esprima.parse(
+            "var client = new ClientRpc('http://" + host + ":" + port + "');\n" +
+            "var store = new Store();\n" +
+            "store.localStore(localStorage, 'app', true);\n" +
+            "store.connectClient(client);"
+        ).body;
     };
 
     var methodsServer = function () {
@@ -462,6 +482,7 @@ var NodeParse = (function () {
     if (typeof module !== 'undefined' && module.exports != null) {
         esprima         = require('../lib/esprima.js');
         exports.NodeParse = toreturn;
+        exports.setContext = setContext;
     }
 
     return toreturn;
