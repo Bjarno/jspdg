@@ -20,8 +20,9 @@ var pre_analyse = function (ast, toGenerate) {
     var primreturns = {};
     var primtoadd   = {};
     var fundefsC    = [];
-    var sharedblock;
+    var sharedblock = undefined;
     var identifiers = {};
+    var shared_usages = [];
 
     function function_args (callnode) {
         return callnode.arguments.filter(function (arg) {
@@ -168,10 +169,38 @@ var pre_analyse = function (ast, toGenerate) {
                 isPreAnalyse: true
             }
         };
-        Ast.augmentAst(call);        
+        Ast.augmentAst(call);
         return call;
     }
 
+    function createCallConsoleLog(varname) {
+        var call = {
+            "type": "ExpressionStatement",
+            "expression": {
+                "type": "CallExpression",
+                "callee": {
+                    "type": "MemberExpression",
+                    "computed": false,
+                    "object": {
+                        "type": "Identifier",
+                        "name": "console"
+                    },
+                    "property": {
+                        "type": "Identifier",
+                        "name": "log"
+                    }
+                },
+                "arguments": [
+                    {
+                        "type": "Identifier",
+                        "name": varname
+                    }
+                ]
+            }
+        };
+        Ast.augmentAst(call);
+        return call;
+    }
 
     function createObjectArgument () {
         var object = {type: "ObjectExpression", properties: []};
@@ -282,6 +311,19 @@ var pre_analyse = function (ast, toGenerate) {
         return calls;
     }
 
+    function generateServerSharedVarUsage(varnames) {
+        var usages = [];
+
+        varnames.forEach(function (varname) {
+            var usage = createCallConsoleLog(varname);
+            usage.leadingComment = {type: "Block", value:"@generated", range: [0,16]};
+            usage.serverCalls = 1;
+            usages.push(usage);
+        });
+
+        return usages;
+    }
+
     function generateIdentifiers() {
         var expressions = [];
         var nodes = {};
@@ -329,6 +371,7 @@ var pre_analyse = function (ast, toGenerate) {
 
                 if (comment && Comments.isSharedAnnotated(comment)) {
                     sharedblock = node;
+                    shared_usages = generateServerSharedVarUsage(scan_toplevel_variables(sharedblock.body));
                     return;
                 }
 
@@ -338,13 +381,17 @@ var pre_analyse = function (ast, toGenerate) {
                 if (node.updateLast) {
                     node.body = node.body.concat(node.updateLast)
                 }
-                   
+
                 if (comment && Comments.isClientAnnotated(comment)) {
                     node.body = node.body.concat(generateCallbackCalls());
                 }
 
                 if (comment && Comments.isClientAnnotated(comment)) {
                     node.body = node.body.concat(generateIdentifiers());
+                }
+
+                if (comment && Comments.isServerAnnotated(comment)) {
+                    node.body = node.body.concat(shared_usages);
                 }
             }
 
@@ -472,6 +519,24 @@ var pre_analyse = function (ast, toGenerate) {
 
         }
     });
+
+    function scan_toplevel_variables(sharedblock) {
+        var result = [];
+
+        sharedblock.forEach(function (expression) {
+            if (expression.type == esprima.Syntax.VariableDeclaration) {
+                var declarations = expression.declarations;
+                
+                declarations.forEach(function (declarator) {
+                    if (declarator.id.type == esprima.Syntax.Identifier) {
+                        result.push(declarator.id.name);
+                    }
+                });
+            }
+        });
+        
+        return result;
+    }
 
     ast.body = js_libs.getLibraries().concat(anonfSh).concat(callSh).concat(ast.body);
 

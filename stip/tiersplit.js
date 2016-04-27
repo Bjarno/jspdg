@@ -165,7 +165,9 @@ function tiersplit (src, context) {
                     removes = removes.concat(pdgnode);
                     return false;
                 }
-                else
+                else if (Comments.isGeneratedAnnotated(pdgnode.parsenode.leadingComment)) {
+                    return false;
+                } else
                     return true;
             else
                 return true;
@@ -180,6 +182,9 @@ function tiersplit (src, context) {
                 else if (Aux.isVarDeclarator(pdgnode.parsenode) &&
                     assumesnames.indexOf(pdgnode.parsenode.id.name) > -1) {
                     removes = removes.concat(pdgnode);
+                    return false;
+                }
+                else if (Comments.isGeneratedAnnotated(pdgnode.parsenode.leadingComment)) {
                     return false;
                 }
                 else

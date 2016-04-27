@@ -38,6 +38,9 @@ var Reactify = (function () {
     transformer.transformActualParameter = Nodeify.transformActualParameter;
     transformer.transformFormalParameter = Nodeify.transformFormalParameter;
     transformer.transformExitNode = Nodeify.transformExitNode;
+    transformer.transformForStm = Nodeify.transformForStm;
+    transformer.transformForInStm = Nodeify.transformForInStm;
+    transformer.transformUpdateExp = Nodeify.transformUpdateExp;
 
     /**
      * Create an empty call to a directly created blank anonymous function, without any parameters.
@@ -113,9 +116,17 @@ var Reactify = (function () {
     var onAssignment = function onAssignment(transpiler) {
         transpiler = Nodeify.transformAssignmentExp(transpiler);
 
-        var node      = transpiler.node;
-        var parsenode = node.parsenode;
-        var left      = parsenode.expression.left;
+        // If running on server tier, don't do anything
+        if (transpiler.options.tier != "client") {
+            return transpiler;
+        }
+
+        var node                = transpiler.node;
+        var parsenode           = node.parsenode;
+        var parsenodeExpression = parsenode.expression;
+        var left                = (parsenodeExpression == undefined) ? parsenode.left : parsenodeExpression.left;
+
+        // TODO: fix bug in twoway-arrays example
 
         // Doing nothing if left: only static analysis if while object changes
         if (left.type !== esprima.Syntax.Identifier) {
