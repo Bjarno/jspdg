@@ -72,11 +72,13 @@ function tiersplit (src, context) {
         shared               = pre_analysis.shared,
         asyncs               = pre_analysis.asyncs,
         graphs               = new Stip.Graphs(ast, src, pre_analysis.primitives),
-        generatedIdentifiers = pre_analysis.identifiers;
+        generatedIdentifiers = pre_analysis.identifiers,
+        shared_variables     = pre_analysis.shared_variables;
 
     // Set pre-analysis AST in context
     context.stip = {
-        generatedAST: genast
+        generatedAST: genast,
+        shared_variables: shared_variables
     };
     
     console.log("Finding declaration nodes for generated identifiers/callbacks...");

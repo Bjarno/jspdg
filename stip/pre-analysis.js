@@ -22,6 +22,7 @@ var pre_analyse = function (ast, toGenerate) {
     var fundefsC    = [];
     var sharedblock = undefined;
     var identifiers = {};
+    var shared_variables = [];
     var shared_usages = [];
 
     function function_args (callnode) {
@@ -371,7 +372,8 @@ var pre_analyse = function (ast, toGenerate) {
 
                 if (comment && Comments.isSharedAnnotated(comment)) {
                     sharedblock = node;
-                    shared_usages = generateServerSharedVarUsage(scan_toplevel_variables(sharedblock.body));
+                    shared_variables = scan_toplevel_variables(sharedblock.body);
+                    shared_usages = generateServerSharedVarUsage(shared_variables);
                     return;
                 }
 
@@ -541,12 +543,13 @@ var pre_analyse = function (ast, toGenerate) {
     ast.body = js_libs.getLibraries().concat(anonfSh).concat(callSh).concat(ast.body);
 
     return  { 
-        ast        : ast,
-        assumes    : js_libs.getLibraries().concat(assumes),
-        shared     : sharedblock,
-        primitives : primitives,
-        asyncs     : asyncs,
-        identifiers: identifiers
+        ast              : ast,
+        assumes          : js_libs.getLibraries().concat(assumes),
+        shared           : sharedblock,
+        primitives       : primitives,
+        asyncs           : asyncs,
+        identifiers      : identifiers,
+        shared_variables : shared_variables
     };
 };
 

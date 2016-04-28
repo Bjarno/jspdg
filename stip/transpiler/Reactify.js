@@ -128,12 +128,17 @@ var Reactify = (function () {
 
         // TODO: fix bug in twoway-arrays example
 
-        // Doing nothing if left: only static analysis if while object changes
+        // Doing nothing if left is not an identifier
         if (left.type !== esprima.Syntax.Identifier) {
             return transpiler;
         }
 
         var variableNameAssignment = left.name;
+
+        // If shared: only update when received a data store update, avoid double work
+        if (context.stip.shared_variables.indexOf(variableNameAssignment) != - 1) {
+            return transpiler;
+        }
 
         // Check if varname is in the list of reactive variables
         // And if they have the same declaration node
