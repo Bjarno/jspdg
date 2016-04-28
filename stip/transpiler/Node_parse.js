@@ -471,7 +471,7 @@ var NodeParse = (function () {
         return esprima.parse(
             "client.expose({" +
                 "'updateStore' : function (key, val, cb) {" +
-                    "REDSTONE.updateVariable(key, val);" +
+                    "REDSTONE.updateVariable(key, val, true);" +
                     "store.set(key, val, true);" +
                 "}" +
             "});"
