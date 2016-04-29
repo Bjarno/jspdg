@@ -174,7 +174,7 @@ var pre_analyse = function (ast, toGenerate) {
         return call;
     }
 
-    function createCallConsoleLog(varname) {
+    function createVarUsage(varname) {
         var call = {
             "type": "ExpressionStatement",
             "expression": {
@@ -291,20 +291,24 @@ var pre_analyse = function (ast, toGenerate) {
 
     function generateCallbackCalls() {
         var calls = [];
-        toGenerate.methodCalls.forEach(function (methodName) {
-            var call = createCall(methodName);
-            var func = fundefsC[methodName];
+        toGenerate.methodCalls.map(function (cb) {
+            console.log(cb);
+
+            var call = createCall(cb);
+            var func = fundefsC[cb];
+
 
             call.leadingComment = {type: "Block", value:"@generated", range: [0,16]};
             call.clientCalls = 1;
 
             if (func) {
-                func.params.forEach(function (param) {
+                func.params.map(function (param) {
                     call.expression.arguments = call.expression.arguments.concat({
-                        "type": "Literal",
-                        "value": null
+                        type: "Literal",
+                        value: null
                     });
                 });
+                Ast.augmentAst(call);
                 calls.push(call);
             }
         });
@@ -316,7 +320,7 @@ var pre_analyse = function (ast, toGenerate) {
         var usages = [];
 
         varnames.forEach(function (varname) {
-            var usage = createCallConsoleLog(varname);
+            var usage = createVarUsage(varname);
             usage.leadingComment = {type: "Block", value:"@generated", range: [0,16]};
             usage.serverCalls = 1;
             usages.push(usage);
@@ -373,7 +377,6 @@ var pre_analyse = function (ast, toGenerate) {
                 if (comment && Comments.isSharedAnnotated(comment)) {
                     sharedblock = node;
                     shared_variables = scan_toplevel_variables(sharedblock.body);
-                    shared_usages = generateServerSharedVarUsage(shared_variables);
                     return;
                 }
 
@@ -393,6 +396,7 @@ var pre_analyse = function (ast, toGenerate) {
                 }
 
                 if (comment && Comments.isServerAnnotated(comment)) {
+                    shared_usages = generateServerSharedVarUsage(shared_variables);
                     node.body = node.body.concat(shared_usages);
                 }
             }
