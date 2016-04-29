@@ -446,7 +446,13 @@ var NodeParse = (function () {
             "var store = new Store();\n" +
             "store.localStore(localStorage, 'app', true);\n" +
             "store.connectClient(client);\n" +
-            "client.rpc('retrieveStore', function (err0, res0) {});"
+            "client.onConnected(function() {\n" +
+                "client.rpc('retrieveStore', function (err0, res0) {});\n" +
+                "REDSTONE.onConnected();\n"
+            + "});\n" +
+            "client.onDisconnected(function() {\n" +
+                "REDSTONE.onDisconnected();"
+            + "});\n"
         ).body;
     };
 
