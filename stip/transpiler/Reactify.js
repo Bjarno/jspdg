@@ -134,9 +134,9 @@ var Reactify = (function () {
         var variableNameAssignment = left.name;
 
         // If shared: only update when received a data store update, avoid double work
-        if (context.shared_variables.indexOf(variableNameAssignment) != - 1) {
+        /*if (context.shared_variables.indexOf(variableNameAssignment) != - 1) {
             return transpiler;
-        }
+        }*/
 
         // Check if varname is in the list of reactive variables
         // And if they have the same declaration node

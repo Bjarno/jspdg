@@ -450,47 +450,54 @@ var NodeParse = (function () {
         }
 
         return esprima.parse(
-            "var client = new ClientRpc('http://" + host + ":" + port + "');\n" +
-            "var store = new Store();\n" +
-            "store.localStore(localStorage, 'app', true);\n" +
-            "store.connectClient(client);\n" +
-            "client.onConnected(function() {\n" +
-            "REDSTONE.onConnected();\n"
-            + "});\n" +
-            "client.onDisconnected(function() {\n" +
-            "REDSTONE.onDisconnected();"
-            + "});\n"
+                "var client = new ClientRpc('http://" + host + ":" + port + "');\n" +
+                "var store = new Store();\n" +
+                "store.localStore(localStorage, 'app', true);\n" +
+                "store.connectClient(client);\n" +
+                "REDSTONE.store = store;\n" +
+                "client.onConnected(function() {\n" +
+                    "REDSTONE.onConnected();\n" +
+                "});\n" +
+                    "client.onDisconnected(function() {\n" +
+                    "REDSTONE.onDisconnected();" +
+                "});\n"
         ).body;
     };
 
     var createServerCloseUp = function () {
-        return esprima.parse("server.onConnection(function (client) {store.loop(function (key, value) {server.rpcTo(client.id, 'updateStore', key, value)});})")
+        return esprima.parse(
+                "server.onConnection(function (client) {" +
+                        "store.loop(function (key, value) {" +
+                            "server.rpcTo(client.id, 'updateStore', key, value);" +
+                        "});" +
+                "});"
+        );
     };
 
     var methodsServer = function () {
         return esprima.parse(
-            "server.expose({" +
-            "'updateStore' : function (key, val, cb) {" +
-            "store.set(key, val, false)" +
-            "}, " +
-            "'retrieveStore' : function (key, val, cb) {" +
-            "var id = this.id;" +
-            "store.loop(function (key, value) {" +
-            "server.rpcTo(id, 'updateStore', key ,value);" +
-            "});" +
-            "return cb(null, store.data);" +
-            "}" +
-            "})"
+                "server.expose({" +
+                    "'updateStore' : function (key, val, cb) {" +
+                        "store.set(key, val, false)" +
+                    "}, " +
+                    "'retrieveStore' : function (key, val, cb) {" +
+                        "var id = this.id;" +
+                        "store.loop(function (key, value) {" +
+                            "server.rpcTo(id, 'updateStore', key ,value);" +
+                        "});" +
+                        "return cb(null, store.data);" +
+                    "}" +
+                "})"
         ).body[0];
     };
 
     var methodsClient = function () {
         return esprima.parse(
             "client.expose({" +
-            "'updateStore' : function (key, val, cb) {" +
-            "REDSTONE.updateVariable(key, val, true);" +
-            "store.set(key, val, true);" +
-            "}" +
+                "'updateStore' : function (key, val, cb) {" +
+                    "REDSTONE.receiveStoreUpdate(key, val);" +
+                    "store.set(key, val, true);" +
+                "}" +
             "});"
         ).body[0];
     };
