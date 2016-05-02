@@ -17,91 +17,44 @@ var pre_analyse     = require('./pre-analysis.js').pre_analyse;
 var Hoist           = require('./hoist.js').Hoist;
 var Stip            = require('./stip.js').Stip;
 
-/* Pdg */
-var Pdg             = require('./../jipda-pdg/pdg/pdg.js').Pdg;
-
 /* Transpiler */
 var Transpiler       = require('./transpiler/slice.js').CodeGenerator;
 
-function tiersplit (src, context) {
-    console.log("Hoisting...");
+
+function tiersplit (src, target, toGenerate, storeInContext, storeDeclNode) {
     var ast = Ast.createAst(src, {loc: true, owningComments: true, comment: true});
     ast = Hoist.hoist(ast, function (node) {
         return Aux.isBlockStm(node) && Comments.isTierAnnotated(node)
     });
-
-    console.log("Creating list of identifiers/function calls to generate...");
     
-    // Generate list of all identifiers that should be generated
-    var toGenerateCallbacks = [];
-    var toGenerateIdentifiers = [];
-    var toGenerateMethods = context.functionNames;
+    var pre_analysis = pre_analyse(ast, toGenerate),
+        genast       = pre_analysis.ast,
+        assumes      = pre_analysis.assumes,
+        shared       = pre_analysis.shared,
+        asyncs       = pre_analysis.asyncs,
+        graphs       = new Stip.Graphs(ast, src, pre_analysis.primitives),
+        generatedIdentifiers = pre_analysis.identifiers;
 
-    // Add callbacks from callbacks
-    context.callbacks.forEach(function (callback) {
-        toGenerateCallbacks.push(callback.name);
-    });
-
-    // Add identifiers from crumbs
-    context.crumbs.forEach(function (crumb) {
-        crumb.variableNames.forEach(function (varname) {
-            toGenerateIdentifiers.push(varname);
+    // Store in context
+    if (storeInContext !== undefined) {
+        storeInContext({
+            generatedAST: genast,
+            generatedIdentifiers: generatedIdentifiers
         });
-    });
-
-    // Aid function, so the list with identifiers are unique
-    var uniq = function uniq(a) {
-        return Array.from(new Set(a));
-    };
-
-    // Join them in one object
-    var toGenerate = {
-        methodCalls: uniq(toGenerateCallbacks.concat(toGenerateMethods)),
-        identifiers: uniq(toGenerateIdentifiers)
-    };
-
-    console.log("Generating extra...");
-    require("./../../utils").dump(toGenerate);
-
-    console.log("Running pre-analyisis...");
-    
-    // Run pre-analysis
-    var pre_analysis         = pre_analyse(ast, toGenerate),
-        genast               = pre_analysis.ast,
-        assumes              = pre_analysis.assumes,
-        shared               = pre_analysis.shared,
-        asyncs               = pre_analysis.asyncs,
-        graphs               = new Stip.Graphs(ast, src, pre_analysis.primitives),
-        generatedIdentifiers = pre_analysis.identifiers,
-        shared_variables     = pre_analysis.shared_variables;
-
-    // Set pre-analysis AST in context
-    context.stip = {
-        generatedAST: genast,
-        shared_variables: shared_variables
-    };
-    
-    console.log("Finding declaration nodes for generated identifiers/callbacks...");
+    }
 
     // Find declaration nodes for the reactive variables
     for (var varname in generatedIdentifiers) {
         if (generatedIdentifiers.hasOwnProperty(varname)) {
-            context.varname2declNode[varname] = Pdg.declarationOf(generatedIdentifiers[varname].expression, genast);
+            if (storeDeclNode !== undefined) {
+                var declNode = Pdg.declarationOf(generatedIdentifiers[varname], genast);
+                storeDeclNode(varname, declNode);
+            }
         }
     }
 
-    // Pass context to Reactify transpiler before starting Stip, so it has access to the crumbs
-    // Pass context to Node_parse for proper setup of server/client
-    // !!! Node.js only !!!
-    require("./transpiler/Reactify.js").setContext(context);
-    require("./transpiler/Node_parse.js").setContext(context);
-    
-    console.log("Running Stip.start()");
-    
-    // Start Stip
     Stip.start(graphs);
 
-    // Execute tier split
     var PDG          = graphs.PDG, 
         slicedc      = PDG.sliceDistributedNode(PDG.dclient),
         sliceds      = PDG.sliceDistributedNode(PDG.dserver),
@@ -118,8 +71,7 @@ function tiersplit (src, context) {
                 nodes.sort(function (n1, n2) {
                     return n1.cnt - n2.cnt;
                 })
-                var target   = 'redstone',
-                    asyncomm = 'callbacks',
+                var asyncomm = 'callbacks',
                     program  = Transpiler.transpile(nodes, {target: target, tier: option, asynccomm : asyncomm}, graphs.AST);
                 return program;
             },
@@ -169,7 +121,8 @@ function tiersplit (src, context) {
                 }
                 else if (Comments.isGeneratedAnnotated(pdgnode.parsenode.leadingComment)) {
                     return false;
-                } else
+                }
+                else
                     return true;
             else
                 return true;
@@ -196,8 +149,8 @@ function tiersplit (src, context) {
         });
         removes.map(function (node) {
            remove(node);
-        })
-        clientprogram =  splitCode(sortedc, "client");
+        });
+        clientprogram = splitCode(sortedc, "client");
         serverprogram = splitCode(sorteds, "server");
         return [clientprogram, serverprogram];
     }   

@@ -133,9 +133,6 @@ var Nodeify = (function () {
                 transpiled.method = false;
                 transpiler.nodes = transpiled.nodes.remove(entry);
             }
-            if (node.parsenode.declarations === undefined) {
-                node.parsenode.declarations = {};
-            }
             node.parsenode.declarations.init = transpiler.parsednode;
             transpiler.nodes = transpiled.nodes;
             
@@ -703,10 +700,9 @@ var Nodeify = (function () {
         NodeParse = require('./Node_parse.js').NodeParse;
         CPSTransform = require('./CPS_transform.js').CPSTransform;
         exports.Nodeify  = transformer;
-        dtypeEquals = require('./../PDG/node.js').dtypeEquals;
     }
 
     return transformer;
 
 
-})();
+})()

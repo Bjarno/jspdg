@@ -126,8 +126,6 @@ var Reactify = (function () {
         var parsenodeExpression = parsenode.expression;
         var left                = (parsenodeExpression == undefined) ? parsenode.left : parsenodeExpression.left;
 
-        // TODO: fix bug in twoway-arrays example
-
         // Doing nothing if left is not an identifier
         if (left.type !== esprima.Syntax.Identifier) {
             return transpiler;
@@ -136,7 +134,7 @@ var Reactify = (function () {
         var variableNameAssignment = left.name;
 
         // If shared: only update when received a data store update, avoid double work
-        if (context.stip.shared_variables.indexOf(variableNameAssignment) != - 1) {
+        if (context.shared_variables.indexOf(variableNameAssignment) != - 1) {
             return transpiler;
         }
 

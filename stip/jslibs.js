@@ -14,7 +14,7 @@ var js_libs = (function () {
         return readLibrary(libname);
     });
 
-    return  { 
+    return  {
         getLibraries : function () {
             return libs.map(function (lib) {
                 var ast = esprima.parse(lib).body[0];

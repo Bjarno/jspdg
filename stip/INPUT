@@ -1,0 +1,21 @@
+var tasks = [];
+
+/* @server */
+{
+	console.log(tasks);
+}
+
+/* @client */
+{
+  function toggleTask(ev) {
+    var idx = ev.node.parentNode.dataset.idx;
+    tasks[idx].checked = !tasks[idx].checked;
+  }
+
+  function addTask() {
+    tasks.push({
+      description: "clienttask",
+      checked: false
+    });
+  }
+}
