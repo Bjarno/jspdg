@@ -12,29 +12,28 @@ var CodeGenerator = (function () {
             case 'redstone':
                 return Transpiler.transpile(Transpiler.createTranspileObject(node, nodes, ast, option, Reactify, [], []));
         }
-    }
+    };
 
     var addPrimitives = function (option) {
         switch (option) {
             case 'normal':
             case 'redstone':
-                // TODO'
+                // TODO
                 return [];
             case 'meteor':
                 return meteorPrimitives();
         }
-    }
+    };
 
     var addCloseUp = function (option, transpiled) {
-        /*switch (option.target) {
-         case 'node.js':
-         if(option.tier === 'client')
-         sliced.footer = nodeFooterC();
-         else
-         sliced.footer = nodeFooterS();
-         }*/
-        return transpiled;
-    }
+            switch (option.target) {
+                case 'node.js':
+                case 'redstone':
+                    if(option.tier === 'server')
+                        transpiled.closeup = transpiled.closeup.concat(NodeParse.createServerCloseUp());
+            }
+            return transpiled;
+    };
 
     var addSetUp = function (option, transpiled) {
         switch (option.target) {
@@ -46,7 +45,7 @@ var CodeGenerator = (function () {
                     transpiled.setup = transpiled.setup.concat(NodeParse.createServer());
         }
         return transpiled;
-    }
+    };
 
     /*
      * Transformation needed on the body code

@@ -381,7 +381,9 @@ var pre_analyse = function (ast, toGenerate) {
                 }
 
                 if (node.updateFirst) {
-                    node.body = node.updateFirst.concat(node.body);
+                    node.body = node.body.slice(0, node.latestHoistIndex-1)
+                                .concat(node.updateFirst)
+                                .concat(node.body.slice(node.latestHoistIndex-1));
                 }
                 if (node.updateLast) {
                     node.body = node.body.concat(node.updateLast)
@@ -494,7 +496,8 @@ var pre_analyse = function (ast, toGenerate) {
 
                             Ast.augmentAst(func);
                             bodyFirst.push(func);
-                            bodyLast.push(call);
+                            if (arrayprims.indexOf(Aux.getCalledName(node)) < 0)
+                                bodyLast.push(call);
                             return createIdentifier(name);
                         }
                         else if (Aux.isIdentifier(arg) && fundefsC[arg.name]) {
@@ -506,7 +509,8 @@ var pre_analyse = function (ast, toGenerate) {
                             else if (comment && Comments.isServerAnnotated(comment)) {
                                 call.serverCalls = 1;
                             }
-                            bodyLast = bodyLast.concat(call);
+                            if (arrayprims.indexOf(Aux.getCalledName(node)) < 0);
+                                bodyLast = bodyLast.concat(call);
                             return arg;
                         }
                         else

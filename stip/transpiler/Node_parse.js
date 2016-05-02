@@ -421,9 +421,7 @@ var NodeParse = (function () {
                 }
             }
         }
-    }
-
-
+    };
 
     var createServer = function () {
         var port = context.options.server_port;
@@ -447,13 +445,16 @@ var NodeParse = (function () {
             "store.localStore(localStorage, 'app', true);\n" +
             "store.connectClient(client);\n" +
             "client.onConnected(function() {\n" +
-                "client.rpc('retrieveStore', function (err0, res0) {});\n" +
                 "REDSTONE.onConnected();\n"
             + "});\n" +
             "client.onDisconnected(function() {\n" +
                 "REDSTONE.onDisconnected();"
             + "});\n"
         ).body;
+    };
+
+    var createServerCloseUp = function () {
+        return esprima.parse("server.onConnection(function (client) {store.loop(function (key, value) {server.rpcTo(client.id, 'updateStore', key, value)});})")
     };
 
     var methodsServer = function () {
@@ -504,6 +505,7 @@ var NodeParse = (function () {
     toreturn.createDataSetter   = createDataSetter;
     toreturn.createDataGetter   = createDataGetter;
     toreturn.createGetterVarDecl = createGetterVarDecl;
+    toreturn.createServerCloseUp = createServerCloseUp;
 
 
     if (typeof module !== 'undefined' && module.exports != null) {
