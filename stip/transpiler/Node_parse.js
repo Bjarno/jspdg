@@ -106,7 +106,7 @@ var NodeParse = (function () {
                                             },
                                     property  : {
                                         type  : "Identifier",
-                                        name  : "rpcCall"
+                                        name  : "rpc"
                                     }
                                 },
                                 arguments : [
@@ -247,7 +247,7 @@ var NodeParse = (function () {
                                 },
                         property  : {
                             type  : "Identifier",
-                            name  : "rpcCall"
+                            name  : "rpc"
                         }
                     },
                     arguments : [
@@ -271,7 +271,7 @@ var NodeParse = (function () {
 
     var broadcast = function () {
         return {
-                parsenode :  {
+            parsenode :  {
                 type: "ExpressionStatement",
                 expression: {
                     type: "CallExpression",
@@ -291,17 +291,16 @@ var NodeParse = (function () {
                         {
                             type: "Identifier",
                             name: ""
-                        },
-                        {
-                            type: "ArrayExpression",
-                            elements: []
                         }
                     ]
                 }
-            }, 
- 
+            },
+
             addArgs : function (args) {
-                this.parsenode.expression.arguments[1].elements = args;
+                var parsenodeargs = this.parsenode.expression.arguments;
+                args.forEach(function (a) {
+                    parsenodeargs.push(a);
+                });
             },
 
             setName : function (name) {
