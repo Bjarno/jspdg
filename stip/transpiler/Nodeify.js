@@ -133,7 +133,14 @@ var Nodeify = (function () {
                 transpiled.method = false;
                 transpiler.nodes = transpiled.nodes.remove(entry);
             }
-            node.parsenode.declarations.init = transpiler.parsednode;
+
+            if (node.parsenode.declarations !== undefined) {
+                node.parsenode.declarations.init = transpiler.parsednode;
+            } else {
+                console.log("WARN!!! node.parsenode.declarations === undefined, skipped setting init");
+                // TODO: Find out why this fails sometimes
+            }
+
             transpiler.nodes = transpiled.nodes;
             
         }
