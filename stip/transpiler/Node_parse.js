@@ -380,13 +380,13 @@ var NodeParse = (function () {
                 "arguments": [
                     {
                         "type": "Literal",
-                        "value": name,
+                        "value": name
                     },
                     value
                 ]
             }
         }
-    }
+    };
 
     var createGetterVarDecl = function (name) {
         return {
@@ -421,7 +421,7 @@ var NodeParse = (function () {
                 }
             }
         }
-    }
+    };
 
     var createServer = function () {
         var port = 3000;
@@ -442,17 +442,30 @@ var NodeParse = (function () {
     var createClient = function () {
         var host = "localhost";
         var port = 3000;
+        var has_server = true;
 
         if (context !== undefined) {
             host = context.options.server_hostname;
             port = context.options.server_port;
+            has_server = context.has_server;
         }
 
-        return esprima.parse(
+        var pre_init;
+
+        if (!has_server) {
+            pre_init =
+                "var client = new REDSTONE.DUMMYCLIENT();\n" +
+                "var store = undefined;";
+        } else {
+            pre_init =
                 "var client = new ClientRpc('http://" + host + ":" + port + "');\n" +
                 "var store = new Store();\n" +
                 "store.localStore(localStorage, 'app', true);\n" +
-                "store.connectClient(client);\n" +
+                "store.connectClient(client);";
+        }
+
+        return esprima.parse(
+                pre_init + "\n" +
                 "REDSTONE.store = store;\n" +
                 "client.onConnected(function() {\n" +
                     "REDSTONE.onConnected();\n" +
